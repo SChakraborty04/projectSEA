@@ -12,95 +12,103 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ChartUpIcon, ChartDownIcon } from "@hugeicons/core-free-icons"
 
-export function SectionCards() {
+interface SectionCardsProps {
+  stats?: {
+    totalEmails: number;
+    phishingEmails: number;
+    pendingDrafts: number;
+    totalEvents: number;
+  };
+}
+
+export function SectionCards({ stats = { totalEmails: 0, phishingEmails: 0, pendingDrafts: 0, totalEvents: 0 } }: SectionCardsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
+    <div className="grid grid-cols-1 gap-6 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <Card className="@container/card border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] rounded-none bg-white dark:bg-[#1C1C1F] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#fff] transition-all duration-75">
+        <CardHeader className="pb-3 border-b-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#121214] p-4 relative">
+          <CardDescription className="text-[10px] font-black uppercase tracking-wider text-black/60 dark:text-white/60">Emails Synced</CardDescription>
+          <CardTitle className="text-3xl font-black tabular-nums tracking-tighter text-black dark:text-white mt-1">
+            {stats.totalEmails}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <HugeiconsIcon icon={ChartUpIcon} strokeWidth={2} />
-              +12.5%
-            </Badge>
+          <CardAction className="absolute top-4 right-4">
+            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-[#C4B5FD] text-black border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000]">
+              Gmail Active
+            </span>
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month{" "}
-            <HugeiconsIcon icon={ChartUpIcon} strokeWidth={2} className="size-4" />
+        <CardFooter className="flex-col items-start gap-1 p-4 text-xs font-bold uppercase tracking-wider">
+          <div className="line-clamp-1 flex gap-2 font-black text-black dark:text-white">
+            Realtime sync active
           </div>
-          <div className="text-muted-foreground">
-            Visitors for the last 6 months
+          <div className="text-black/60 dark:text-white/60 text-[10px]">
+            Cached local messages
           </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>New Customers</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+      
+      <Card className="@container/card border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] rounded-none bg-white dark:bg-[#1C1C1F] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#fff] transition-all duration-75">
+        <CardHeader className="pb-3 border-b-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#121214] p-4 relative">
+          <CardDescription className="text-[10px] font-black uppercase tracking-wider text-black/60 dark:text-white/60">Threats Filtered</CardDescription>
+          <CardTitle className="text-3xl font-black tabular-nums tracking-tighter text-[#FF6B6B] dark:text-[#ff8f8f] mt-1">
+            {stats.phishingEmails}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <HugeiconsIcon icon={ChartDownIcon} strokeWidth={2} />
-              -20%
-            </Badge>
+          <CardAction className="absolute top-4 right-4">
+            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-[#FF6B6B] text-black border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000]">
+              DistilBERT active
+            </span>
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period{" "}
-            <HugeiconsIcon icon={ChartDownIcon} strokeWidth={2} className="size-4" />
+        <CardFooter className="flex-col items-start gap-1 p-4 text-xs font-bold uppercase tracking-wider">
+          <div className="line-clamp-1 flex gap-2 font-black text-[#FF6B6B]">
+            Phishing blocked
           </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
+          <div className="text-black/60 dark:text-white/60 text-[10px]">
+            Scans incoming body/snippet
           </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
+
+      <Card className="@container/card border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] rounded-none bg-white dark:bg-[#1C1C1F] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#fff] transition-all duration-75">
+        <CardHeader className="pb-3 border-b-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#121214] p-4 relative">
+          <CardDescription className="text-[10px] font-black uppercase tracking-wider text-black/60 dark:text-white/60">Pending Approvals</CardDescription>
+          <CardTitle className="text-3xl font-black tabular-nums tracking-tighter text-black dark:text-white mt-1">
+            {stats.pendingDrafts}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <HugeiconsIcon icon={ChartUpIcon} strokeWidth={2} />
-              +12.5%
-            </Badge>
+          <CardAction className="absolute top-4 right-4">
+            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-[#FFD93D] text-black border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000]">
+              Awaiting Action
+            </span>
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention{" "}
-            <HugeiconsIcon icon={ChartUpIcon} strokeWidth={2} className="size-4" />
+        <CardFooter className="flex-col items-start gap-1 p-4 text-xs font-bold uppercase tracking-wider">
+          <div className="line-clamp-1 flex gap-2 font-black text-black dark:text-white">
+            Telegram & Web drafts
           </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
+          <div className="text-black/60 dark:text-white/60 text-[10px]">
+            Requires user confirmation
+          </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
+
+      <Card className="@container/card border-4 border-black dark:border-white shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] rounded-none bg-white dark:bg-[#1C1C1F] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[5px_5px_0px_0px_#000] dark:hover:shadow-[5px_5px_0px_0px_#fff] transition-all duration-75">
+        <CardHeader className="pb-3 border-b-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#121214] p-4 relative">
+          <CardDescription className="text-[10px] font-black uppercase tracking-wider text-black/60 dark:text-white/60">Scheduled Meetings</CardDescription>
+          <CardTitle className="text-3xl font-black tabular-nums tracking-tighter text-black dark:text-white mt-1">
+            {stats.totalEvents}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <HugeiconsIcon icon={ChartUpIcon} strokeWidth={2} />
-              +4.5%
-            </Badge>
+          <CardAction className="absolute top-4 right-4">
+            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1 bg-white text-black border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000]">
+              Calendar Sync
+            </span>
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase{" "}
-            <HugeiconsIcon icon={ChartUpIcon} strokeWidth={2} className="size-4" />
+        <CardFooter className="flex-col items-start gap-1 p-4 text-xs font-bold uppercase tracking-wider">
+          <div className="line-clamp-1 flex gap-2 font-black text-black dark:text-white">
+            Active calendar sync
           </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
+          <div className="text-black/60 dark:text-white/60 text-[10px]">
+            Conflict check active
+          </div>
         </CardFooter>
       </Card>
     </div>

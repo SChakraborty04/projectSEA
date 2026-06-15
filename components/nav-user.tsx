@@ -42,15 +42,15 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-none border-t-4 border-black dark:border-white h-14 hover:bg-[#FFFDF5] dark:hover:bg-black uppercase font-black tracking-wider text-xs"
             >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
+              <Avatar className="h-8 w-8 rounded-none border-2 border-black dark:border-white grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">{user.name.charAt(0)+user.name.split(' ')[1]?.charAt(0) || ''}</AvatarFallback>
+                <AvatarFallback className="rounded-none">{user.name.charAt(0)+user.name.split(' ')[1]?.charAt(0) || ''}</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
+              <div className="grid flex-1 text-left leading-tight">
+                <span className="truncate font-black">{user.name}</span>
+                <span className="truncate text-[10px] font-bold text-muted-foreground lowercase">
                   {user.email}
                 </span>
               </div>
@@ -58,43 +58,43 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-none border-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#1C1C1F] shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] p-1.5"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={4}
+            sideOffset={8}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
+              <div className="flex items-center gap-2 px-2 py-2 text-left text-sm border-b-2 border-black dark:border-white pb-3">
+                <Avatar className="h-8 w-8 rounded-none border-2 border-black dark:border-white">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">{user.name.charAt(0)+user.name.split(' ')[1]?.charAt(0) || ''}</AvatarFallback>
+                  <AvatarFallback className="rounded-none">{user.name.charAt(0)+user.name.split(' ')[1]?.charAt(0) || ''}</AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate font-black uppercase text-xs">{user.name}</span>
+                  <span className="truncate text-[10px] font-bold text-muted-foreground lowercase">
                     {user.email}
                   </span>
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} />
+            <div className="h-1 bg-black dark:bg-white my-1" />
+            <DropdownMenuGroup className="space-y-1">
+              <DropdownMenuItem className="hover:bg-[#FFD93D] dark:hover:bg-[#db6802] hover:text-black dark:hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
+                <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} className="size-4" />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
+              <DropdownMenuItem className="hover:bg-[#FFD93D] dark:hover:bg-[#db6802] hover:text-black dark:hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
+                <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <HugeiconsIcon icon={Notification03Icon} strokeWidth={2} />
+              <DropdownMenuItem className="hover:bg-[#FFD93D] dark:hover:bg-[#db6802] hover:text-black dark:hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
+                <HugeiconsIcon icon={Notification03Icon} strokeWidth={2} className="size-4" />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => void logout()}>
-              <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+            <div className="h-0.5 bg-black/10 dark:bg-white/10 my-1" />
+            <DropdownMenuItem onClick={() => void logout()} className="hover:bg-[#FF6B6B] dark:hover:bg-red-700 hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
+              <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} className="size-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

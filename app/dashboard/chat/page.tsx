@@ -48,8 +48,8 @@ function Chat() {
   }
 
   return (
-    <div className="relative size-full h-screen w-full p-6">
-      <div className="flex h-full flex-col">
+    <div className="relative flex flex-col h-[calc(100vh-var(--header-height))] w-full p-6 bg-[#FFFDF5] dark:bg-[#121214] overflow-hidden">
+      <div className="flex h-full flex-col min-h-0">
         <Conversation className="h-full">
           <ConversationContent>
             {messages.map(message => (

@@ -90,56 +90,37 @@ export async function AppSidebar({ ...props }: React.ComponentProps<typeof Sideb
    }
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
-              <a href="#">
-                <HugeiconsIcon icon={CommandIcon} strokeWidth={2} className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar collapsible="offcanvas" {...props} className="border-r-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#121214]">
+      <SidebarHeader className="border-b-4 border-black dark:border-white p-4 h-(--header-height) flex items-center justify-center bg-[#FFFDF5] dark:bg-black z-20">
+        <div className="flex items-center gap-2 font-black uppercase text-base text-black dark:text-white w-full">
+          <span>⚡ SUPEREA</span>
+          <span className="text-[10px] px-1.5 py-0.5 bg-[#FFD93D] dark:bg-[#db6802] border-2 border-black dark:border-white text-black dark:text-white font-black leading-none">v1 α</span>
+        </div>
       </SidebarHeader>
-      <SidebarContent>
-        <div className="px-2 py-2">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              {agentProfile ? (
-                <SidebarMenuButton
-                  className="data-[slot=sidebar-menu-button]:p-1.5! h-auto bg-muted/50 border border-border"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <HugeiconsIcon icon={CommandIcon} strokeWidth={2} className="size-4 text-primary" />
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <span className="text-sm font-semibold">{agentProfile.agentName}</span>
-                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">{agentProfile.companyName || "AI Assistant"}</span>
-                      </div>
-                    </div>
-                    <AgentMicButton />
-                  </div>
-                </SidebarMenuButton>
-              ) : (
-                <SidebarMenuButton
-                  asChild
-                  className="data-[slot=sidebar-menu-button]:p-1.5! bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground h-10"
-                >
-                  <Link href="/dashboard/agent/setup" className="flex items-center justify-center gap-2 w-full">
-                    <Plus className="size-4" />
-                    <span className="font-semibold">Setup Agent!</span>
-                  </Link>
-                </SidebarMenuButton>
-              )}
-            </SidebarMenuItem>
-          </SidebarMenu>
+      <SidebarContent className="bg-[#FFFDF5] dark:bg-[#121214]">
+        <div className="px-3 py-3">
+          {agentProfile ? (
+            <div className="border-4 border-black dark:border-white bg-white dark:bg-[#1C1C1F] p-2.5 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] flex items-center justify-between w-full">
+              <Link href="/dashboard/agent/setup" className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 border-2 border-black dark:border-white bg-[#C4B5FD] flex items-center justify-center flex-shrink-0">
+                  <HugeiconsIcon icon={CommandIcon} strokeWidth={2} className="size-4 text-black" />
+                </div>
+                <div className="flex flex-col text-left min-w-0">
+                  <span className="text-xs font-black uppercase truncate max-w-[120px] text-black dark:text-white">{agentProfile.agentName}</span>
+                  <span className="text-[9px] font-bold text-black/60 dark:text-white/60 truncate max-w-[120px]">{agentProfile.companyName || "AI Assistant"}</span>
+                </div>
+              </Link>
+              <AgentMicButton />
+            </div>
+          ) : (
+            <Link 
+              href="/dashboard/agent/setup" 
+              className="flex items-center justify-center gap-2 w-full h-10 border-4 border-black dark:border-white bg-[#FFD93D] hover:bg-[#ffbe25] text-black font-black uppercase text-xs tracking-wider shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-75"
+            >
+              <Plus className="size-4" />
+              <span>Setup Agent</span>
+            </Link>
+          )}
         </div>
         <NavMain items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />

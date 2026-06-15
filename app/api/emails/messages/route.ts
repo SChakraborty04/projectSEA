@@ -60,6 +60,7 @@ function normalise(m: any) {
         internalDate: m.internalDate
             ? new Date(Number(m.internalDate)).toISOString()
             : m.createdAt,
+        phishingAnalysis: m.phishingAnalysis,
     };
 }
 

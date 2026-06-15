@@ -146,17 +146,17 @@ export function AgentSetupForm({
 
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-8">
+    <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FieldGroup>
           <Controller
             name="agentName"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="agentName">Agent Name</FieldLabel>
-                <Input placeholder="e.g. Sarah" {...field} id="agentName" aria-invalid={fieldState.invalid} />
-                <FieldDescription>The name your AI will use when answering calls.</FieldDescription>
+              <Field data-invalid={fieldState.invalid} className="space-y-1">
+                <FieldLabel htmlFor="agentName" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Agent Name</FieldLabel>
+                <Input placeholder="E.G. SARAH" {...field} id="agentName" aria-invalid={fieldState.invalid} />
+                <FieldDescription className="text-[9px] font-bold text-black/60 dark:text-white/60 uppercase tracking-wider">The name your AI will use when answering calls.</FieldDescription>
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               </Field>
             )}
@@ -168,30 +168,28 @@ export function AgentSetupForm({
             name="firstMessage"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="firstMessage">First Message</FieldLabel>
-                <Input placeholder="Hello, how can I help you today?" {...field} id="firstMessage" aria-invalid={fieldState.invalid} />
-                <FieldDescription>What the agent says when they pick up the phone.</FieldDescription>
+              <Field data-invalid={fieldState.invalid} className="space-y-1">
+                <FieldLabel htmlFor="firstMessage" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">First Message</FieldLabel>
+                <Input placeholder="HELLO, HOW CAN I HELP YOU TODAY?" {...field} id="firstMessage" aria-invalid={fieldState.invalid} />
+                <FieldDescription className="text-[9px] font-bold text-black/60 dark:text-white/60 uppercase tracking-wider">What the agent says when they pick up the phone.</FieldDescription>
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               </Field>
             )}
           />
         </FieldGroup>
-
-
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Business Context</h3>
+      <div className="space-y-4 pt-2">
+        <h3 className="text-xs font-black uppercase tracking-wider border-b-4 border-black dark:border-white pb-1 mt-6 mb-3 text-black dark:text-white">Business Context</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FieldGroup>
             <Controller
               name="companyName"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="companyName">Company Name</FieldLabel>
-                  <Input placeholder="Acme Inc." {...field} id="companyName" aria-invalid={fieldState.invalid} />
+                <Field data-invalid={fieldState.invalid} className="space-y-1">
+                  <FieldLabel htmlFor="companyName" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Company Name</FieldLabel>
+                  <Input placeholder="ACME INC." {...field} id="companyName" aria-invalid={fieldState.invalid} />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
@@ -203,10 +201,10 @@ export function AgentSetupForm({
               name="designation"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="designation">Your Designation / Title</FieldLabel>
-                  <Input placeholder="e.g. Founder & CEO" {...field} id="designation" aria-invalid={fieldState.invalid} />
-                  <FieldDescription>Your role or title in the company.</FieldDescription>
+                <Field data-invalid={fieldState.invalid} className="space-y-1">
+                  <FieldLabel htmlFor="designation" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Your Designation / Title</FieldLabel>
+                  <Input placeholder="E.G. FOUNDER & CEO" {...field} id="designation" aria-invalid={fieldState.invalid} />
+                  <FieldDescription className="text-[9px] font-bold text-black/60 dark:text-white/60 uppercase tracking-wider">Your role or title in the company.</FieldDescription>
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
@@ -220,10 +218,10 @@ export function AgentSetupForm({
               name="businessDescription"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="businessDescription">Business Description</FieldLabel>
+                <Field data-invalid={fieldState.invalid} className="space-y-1">
+                  <FieldLabel htmlFor="businessDescription" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Business Description</FieldLabel>
                   <Textarea 
-                    placeholder="What does your company do? What should the agent know about your services?" 
+                    placeholder="WHAT DOES YOUR COMPANY DO? WHAT SHOULD THE AGENT KNOW ABOUT YOUR SERVICES?" 
                     className="min-h-[100px]"
                     {...field} 
                     id="businessDescription"
@@ -237,8 +235,8 @@ export function AgentSetupForm({
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Scheduling Rules</h3>
+      <div className="space-y-4 pt-2">
+        <h3 className="text-xs font-black uppercase tracking-wider border-b-4 border-black dark:border-white pb-1 mt-6 mb-3 text-black dark:text-white">Scheduling Rules</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FieldGroup>
@@ -246,9 +244,9 @@ export function AgentSetupForm({
               name="timezone"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="timezone">Timezone</FieldLabel>
-                  <Input placeholder="Asia/Kolkata" {...field} id="timezone" aria-invalid={fieldState.invalid} />
+                <Field data-invalid={fieldState.invalid} className="space-y-1">
+                  <FieldLabel htmlFor="timezone" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Timezone</FieldLabel>
+                  <Input placeholder="ASIA/KOLKATA" {...field} id="timezone" aria-invalid={fieldState.invalid} />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
@@ -261,8 +259,8 @@ export function AgentSetupForm({
                 name="workingHoursStart"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="workingHoursStart">Start Time</FieldLabel>
+                  <Field data-invalid={fieldState.invalid} className="space-y-1">
+                    <FieldLabel htmlFor="workingHoursStart" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Start Time</FieldLabel>
                     <Input type="time" {...field} id="workingHoursStart" aria-invalid={fieldState.invalid} />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -275,8 +273,8 @@ export function AgentSetupForm({
                 name="workingHoursEnd"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="workingHoursEnd">End Time</FieldLabel>
+                  <Field data-invalid={fieldState.invalid} className="space-y-1">
+                    <FieldLabel htmlFor="workingHoursEnd" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">End Time</FieldLabel>
                     <Input type="time" {...field} id="workingHoursEnd" aria-invalid={fieldState.invalid} />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -290,10 +288,10 @@ export function AgentSetupForm({
               name="bufferMinutes"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="bufferMinutes">Buffer Time (minutes)</FieldLabel>
+                <Field data-invalid={fieldState.invalid} className="space-y-1">
+                  <FieldLabel htmlFor="bufferMinutes" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Buffer Time (minutes)</FieldLabel>
                   <Input type="number" {...field} id="bufferMinutes" aria-invalid={fieldState.invalid} />
-                  <FieldDescription>Time to keep free between meetings.</FieldDescription>
+                  <FieldDescription className="text-[9px] font-bold text-black/60 dark:text-white/60 uppercase tracking-wider">Time to keep free between meetings.</FieldDescription>
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
@@ -305,10 +303,10 @@ export function AgentSetupForm({
               name="minNoticeHours"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="minNoticeHours">Min Notice (hours)</FieldLabel>
+                <Field data-invalid={fieldState.invalid} className="space-y-1">
+                  <FieldLabel htmlFor="minNoticeHours" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Min Notice (hours)</FieldLabel>
                   <Input type="number" {...field} id="minNoticeHours" aria-invalid={fieldState.invalid} />
-                  <FieldDescription>Minimum hours before a meeting can be booked.</FieldDescription>
+                  <FieldDescription className="text-[9px] font-bold text-black/60 dark:text-white/60 uppercase tracking-wider">Minimum hours before a meeting can be booked.</FieldDescription>
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
@@ -316,14 +314,14 @@ export function AgentSetupForm({
           </FieldGroup>
         </div>
 
-        <FieldGroup>
+        <FieldGroup className="pt-2">
           <Controller
             name="workingDays"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel>Working Days</FieldLabel>
-                <div className="flex flex-wrap gap-4 mt-2">
+              <Field data-invalid={fieldState.invalid} className="space-y-2">
+                <FieldLabel className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Working Days</FieldLabel>
+                <div className="flex flex-wrap gap-4 mt-1">
                   {DAYS.map((day) => (
                     <div key={day.id} className="flex items-center space-x-2">
                       <Checkbox
@@ -334,8 +332,9 @@ export function AgentSetupForm({
                             ? field.onChange([...field.value, day.id])
                             : field.onChange(field.value?.filter((value) => value !== day.id))
                         }}
+                        className="border-2 border-black dark:border-white rounded-none w-4 h-4 data-[state=checked]:bg-[#FFD93D] data-[state=checked]:text-black"
                       />
-                      <label htmlFor={`workingDays-${day.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      <label htmlFor={`workingDays-${day.id}`} className="text-xs font-bold uppercase tracking-wider leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-black dark:text-white">
                         {day.label}
                       </label>
                     </div>
@@ -348,17 +347,17 @@ export function AgentSetupForm({
         </FieldGroup>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Custom Persona Instructions</h3>
+      <div className="space-y-4 pt-2">
+        <h3 className="text-xs font-black uppercase tracking-wider border-b-4 border-black dark:border-white pb-1 mt-6 mb-3 text-black dark:text-white">Custom Persona Instructions</h3>
         <FieldGroup>
           <Controller
             name="customInstructions"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="customInstructions">Additional Instructions</FieldLabel>
+              <Field data-invalid={fieldState.invalid} className="space-y-1">
+                <FieldLabel htmlFor="customInstructions" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Additional Instructions</FieldLabel>
                 <Textarea 
-                  placeholder="E.g. Always greet the user warmly. If they ask about pricing, say it starts at $99/mo." 
+                  placeholder="E.G. ALWAYS GREET THE USER WARMLY. IF THEY ASK ABOUT PRICING, SAY IT STARTS AT $99/MO." 
                   className="min-h-[100px]"
                   {...field} 
                   id="customInstructions"
@@ -372,48 +371,42 @@ export function AgentSetupForm({
       </div>
 
       {/* Telegram Bot Integration Card */}
-      <div className="space-y-4 p-6 border rounded-xl bg-card text-card-foreground shadow-sm relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-50 transition-opacity group-hover:opacity-100 duration-500 pointer-events-none" />
-        
+      <div className="space-y-4 p-6 border-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#1C1C1F] rounded-none shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#fff] relative overflow-hidden group">
         <div className="flex items-start justify-between relative z-10">
-          <div className="space-y-1">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
-                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15.68-.79 3.42-1.12 5.18-.14.75-.41 1-.68 1.03-.59.05-1.04-.39-1.61-.76-.89-.58-1.39-.94-2.26-1.51-.99-.66-.35-1.02.22-1.61.15-.15 2.72-2.49 2.77-2.69.01-.03.01-.14-.06-.2-.07-.06-.17-.04-.25-.02-.11.02-1.92 1.21-5.41 3.56-.51.35-.97.52-1.38.51-.45-.01-1.32-.26-1.97-.47-.79-.26-1.42-.4-1.36-.84.03-.23.35-.46.96-.69 3.76-1.64 6.27-2.72 7.54-3.25 3.59-1.51 4.34-1.77 4.83-1.78.11 0 .35.03.5.16.13.11.16.27.18.38.01.07.03.24.02.43z" />
-                </svg>
+          <div className="space-y-2">
+            <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-black dark:text-white">
+              <span className="flex h-6 w-6 items-center justify-center border-2 border-black bg-[#C4B5FD] text-black font-black text-xs">
+                T
               </span>
               Telegram Bot Integration
             </h3>
-            <p className="text-sm text-muted-foreground max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-wider text-black/60 dark:text-white/60 max-w-2xl leading-normal">
               Link your agent to the official Telegram assistant. Once connected, your bot will alert you of upcoming events, display recent emails, support interactive approval buttons, and chat directly in AI Agent mode.
             </p>
           </div>
           
           {telegramStatus.isConnected ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-500 border border-emerald-500/20 shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span className="inline-flex items-center gap-1.5 rounded-none bg-[#86EFAC] px-2.5 py-1 text-[10px] font-black uppercase text-black border-2 border-black shadow-[2px_2px_0px_0px_#000]">
               Connected
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500 border border-amber-500/20 shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            <span className="inline-flex items-center gap-1.5 rounded-none bg-[#FF6B6B] px-2.5 py-1 text-[10px] font-black uppercase text-black border-2 border-black shadow-[2px_2px_0px_0px_#000]">
               Not Configured
             </span>
           )}
         </div>
 
-        <div className="pt-4 border-t border-border/50 relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="text-sm">
+        <div className="pt-4 border-t-2 border-black/20 dark:border-white/20 relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="text-xs font-bold uppercase tracking-wider">
             {telegramStatus.isConnected ? (
               <div className="space-y-1">
-                <span className="text-muted-foreground">Linked Chat ID: </span>
-                <code className="px-1.5 py-0.5 rounded bg-muted font-mono font-bold text-foreground">{telegramStatus.chatId}</code>
+                <span className="text-black/60 dark:text-white/60">Linked Chat ID: </span>
+                <code className="px-2 py-0.5 border-2 border-black bg-white dark:bg-black font-mono font-black text-black dark:text-white">{telegramStatus.chatId}</code>
               </div>
             ) : telegramStatus.botUsername && telegramStatus.connectionCode ? (
-              <span className="text-amber-500 font-medium">✨ Webhook active! Send the code below to the bot to verify.</span>
+              <span className="text-[#db6802] font-black">✨ Webhook active! Send the code below to the bot to verify.</span>
             ) : (
-              <span className="text-muted-foreground">Click connect to generate your Telegram invite link.</span>
+              <span className="text-black/60 dark:text-white/60">Click connect to generate your Telegram invite link.</span>
             )}
           </div>
 
@@ -424,7 +417,7 @@ export function AgentSetupForm({
                 variant="outline"
                 disabled={telegramStatus.isSettingUp}
                 onClick={handleConnectTelegram}
-                className="bg-blue-500/5 border-blue-500/20 text-blue-500 hover:bg-blue-500/10 active:scale-95 transition-transform"
+                className="bg-[#C4B5FD] hover:bg-[#b09ffc] text-black border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-black uppercase text-xs transition-all duration-75 py-2.5 h-auto rounded-none"
               >
                 {telegramStatus.isSettingUp ? "Activating..." : "Connect Telegram Bot"}
               </Button>
@@ -432,14 +425,14 @@ export function AgentSetupForm({
 
             {telegramStatus.botUsername && telegramStatus.connectionCode && (
               <div className="flex flex-col sm:flex-row items-center gap-3">
-                <div className="flex flex-col items-start bg-amber-500/10 border border-amber-500/20 rounded-md px-4 py-2">
-                  <span className="text-xs text-amber-500/80 uppercase font-semibold mb-1">Connection Code</span>
-                  <span className="text-2xl font-mono font-bold tracking-widest text-amber-500">{telegramStatus.connectionCode}</span>
+                <div className="flex flex-col items-start bg-[#FFD93D] border-2 border-black rounded-none px-4 py-1.5 shadow-[2px_2px_0px_0px_#000]">
+                  <span className="text-[8px] text-black font-black uppercase mb-0.5">Connection Code</span>
+                  <span className="text-xl font-mono font-black tracking-widest text-black">{telegramStatus.connectionCode}</span>
                 </div>
                 <Button
                   type="button"
                   asChild
-                  className="bg-gradient-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600 text-white font-semibold shadow-md active:scale-95 transition-transform flex items-center gap-1.5 h-full py-4"
+                  className="bg-[#FFD93D] hover:bg-[#ffbe25] text-black border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] font-black uppercase text-xs hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-75 flex items-center gap-1.5 h-12 py-3 px-6 rounded-none"
                 >
                   <a 
                     href={`https://t.me/${telegramStatus.botUsername}`}
@@ -447,9 +440,6 @@ export function AgentSetupForm({
                     rel="noopener noreferrer"
                   >
                     👉 Open Telegram Bot
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
                   </a>
                 </Button>
               </div>
@@ -461,7 +451,7 @@ export function AgentSetupForm({
                 variant="outline"
                 onClick={handleConnectTelegram}
                 disabled={telegramStatus.isSettingUp}
-                className="border-muted-foreground/20 text-muted-foreground hover:bg-muted"
+                className="bg-white dark:bg-black text-black dark:text-white border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-black uppercase text-xs transition-all duration-75 py-2.5 h-auto rounded-none"
               >
                 {telegramStatus.isSettingUp ? "Updating..." : "Reconnect / Link New Chat"}
               </Button>
@@ -470,7 +460,11 @@ export function AgentSetupForm({
         </div>
       </div>
 
-      <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
+      <Button 
+        type="submit" 
+        disabled={isLoading} 
+        className="w-full md:w-auto bg-[#FFD93D] dark:bg-[#db6802] text-black border-4 border-black dark:border-white py-4 px-8 text-sm font-black uppercase tracking-wider hover:bg-[#ffbe25] hover:text-black rounded-none shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] btn-push transition-colors duration-100 flex items-center justify-center"
+      >
         {isLoading ? "Saving..." : initialData?.vapiAssistantId ? "Update Agent" : "Provision Agent"}
       </Button>
     </form>

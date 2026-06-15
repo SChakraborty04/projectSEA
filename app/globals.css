@@ -62,7 +62,7 @@
 
 .dark {
     --background: oklch(0.2050 0 0);
-    --foreground: oklch(0.9850 0 0);
+    --foreground: oklch(47.651% 0.19406 29.052);
     --card: oklch(0.1650 0 0);
     --card-foreground: oklch(0.9850 0 0);
     --popover: oklch(0.2050 0 0);
@@ -198,4 +198,31 @@
   html {
     @apply font-sans;
     }
+}
+
+/* Custom Brutalist Cursors */
+:root {
+  --cursor-default: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Cpath d=%22M2 2 L2 26 L9 20 L15 29 L20 26 L14 17 L22 17 Z%22 fill=%22%23000%22 transform=%22translate(1.5, 1.5)%22/%3E%3Cpath d=%22M2 2 L2 26 L9 20 L15 29 L20 26 L14 17 L22 17 Z%22 fill=%22%23fff%22 stroke=%22%23000%22 stroke-width=%222.5%22 stroke-linejoin=%22miter%22/%3E%3C/svg%3E") 2 2, default;
+  
+  --cursor-pointer: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Cpath d=%22M8 2 L12 2 L12 12 L16 12 L16 14 L19 14 L19 16 L22 16 L22 23 L18 27 L8 27 L8 12 L5 15 L3 13 L8 8 Z%22 fill=%22%23000%22 transform=%22translate(1.5, 1.5)%22/%3E%3Cpath d=%22M8 2 L12 2 L12 12 L16 12 L16 14 L19 14 L19 16 L22 16 L22 23 L18 27 L8 27 L8 12 L5 15 L3 13 L8 8 Z%22 fill=%22%23fff%22 stroke=%22%23000%22 stroke-width=%222.5%22 stroke-linejoin=%22miter%22/%3E%3C/svg%3E") 8 2, pointer;
+  
+  --cursor-text: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Cpath d=%22M10 6 L22 6 M16 6 L16 26 M10 26 L22 26%22 stroke=%22%23000%22 stroke-width=%224.5%22 stroke-linecap=%22square%22/%3E%3Cpath d=%22M10 6 L22 6 M16 6 L16 26 M10 26 L22 26%22 stroke=%22%23fff%22 stroke-width=%222%22 stroke-linecap=%22square%22/%3E%3C/svg%3E") 16 16, text;
+  
+  --cursor-not-allowed: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%224.5%22 transform=%22translate(1.5, 1.5)%22/%3E%3Cline x1=%229%22 y1=%229%22 x2=%2223%22 y2=%2223%22 stroke=%22%23000%22 stroke-width=%224.5%22 transform=%22translate(1.5, 1.5)%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2210%22 fill=%22%23fff%22 stroke=%22%23000%22 stroke-width=%223%22/%3E%3Cline x1=%229%22 y1=%229%22 x2=%2223%22 y2=%2223%22 stroke=%22%23000%22 stroke-width=%223%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%228%22 fill=%22none%22 stroke=%22%23ff0000%22 stroke-width=%222%22/%3E%3Cline x1=%2210.5%22 y1=%2210.5%22 x2=%2221.5%22 y2=%2221.5%22 stroke=%22%23ff0000%22 stroke-width=%222%22/%3E%3C/svg%3E") 16 16, not-allowed;
+}
+
+html, body {
+  cursor: var(--cursor-default) !important;
+}
+
+a, button, [role="button"], select, summary, label, input[type="submit"], input[type="button"], button *, a *, [role="button"] *, [role="tab"], [role="tab"] *, .cursor-pointer {
+  cursor: var(--cursor-pointer) !important;
+}
+
+input[type="text"], input[type="email"], input[type="search"], input[type="password"], input[type="number"], input[type="tel"], input[type="url"], textarea, [contenteditable], .cursor-text {
+  cursor: var(--cursor-text) !important;
+}
+
+[disabled], .disabled, :disabled, [aria-disabled="true"], .cursor-not-allowed {
+  cursor: var(--cursor-not-allowed) !important;
 }

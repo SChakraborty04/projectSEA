@@ -22,14 +22,14 @@ export function PromptInput({ children, onSubmit, className }: { children: React
 
 export function PromptInputBody({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex items-center bg-background border shadow-sm rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary/50 transition-all pl-12 pr-12">
+    <div className="relative flex items-center bg-white dark:bg-[#1C1C1F] border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] rounded-none p-2 pl-12 pr-14 transition-all">
       <div className="absolute left-3">
         <AgentMicButton />
       </div>
       {children}
       <button 
         type="submit" 
-        className="absolute right-3 p-2 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity"
+        className="absolute right-3 p-2 bg-[#FFD93D] text-black border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-75 rounded-none"
       >
         <SendIcon className="w-4 h-4" />
       </button>
@@ -40,7 +40,7 @@ export function PromptInputBody({ children }: { children: React.ReactNode }) {
 export function PromptInputTextarea({ className, onChange, value, placeholder, disabled }: any) {
   return (
     <textarea 
-      className={`w-full bg-transparent px-4 py-3 outline-none resize-none min-h-[44px] max-h-[200px] text-sm ${className || ''}`} 
+      className={`w-full bg-transparent px-4 py-3 outline-none resize-none min-h-[44px] max-h-[200px] text-xs font-bold uppercase tracking-wider text-black dark:text-white ${className || ''}`} 
       onChange={onChange} 
       value={value} 
       placeholder={placeholder} 

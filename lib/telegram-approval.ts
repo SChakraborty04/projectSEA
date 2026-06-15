@@ -37,6 +37,9 @@ export async function requestEmailApproval(
                 [
                     { text: "✅ Approve & Send", callback_data: `email_approve:${draftId}` },
                     { text: "❌ Discard", callback_data: `email_reject:${draftId}` }
+                ],
+                [
+                    { text: "✍️ Suggest Improvement", callback_data: `email_improve:${draftId}` }
                 ]
             ]
         }

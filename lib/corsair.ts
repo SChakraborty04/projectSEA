@@ -6,9 +6,106 @@ import { pool } from '../db/index';
 import { telegram } from '@corsair-dev/telegram';
 import { getCorsairAgent } from './agent';
 
+function getHeader(headers: any[] | undefined, name: string): string {
+    return headers?.find((h: any) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? '';
+}
+
+function extractBody(payload: any): string {
+    if (!payload) return '';
+    let data = '';
+    if (payload.parts && payload.parts.length > 0) {
+        let targetPart = payload.parts.find((p: any) => p.mimeType === 'text/html') 
+                      || payload.parts.find((p: any) => p.mimeType === 'text/plain')
+                      || payload.parts[0];
+        if (targetPart?.parts) {
+            return extractBody(targetPart);
+        }
+        data = targetPart?.body?.data || '';
+    } else if (payload.body?.data) {
+        data = payload.body.data;
+    }
+
+    if (!data) return '';
+    try {
+        return Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8');
+    } catch {
+        return '';
+    }
+}
+
 export const corsair = createCorsair({
     plugins: [
-        gmail(),
+        gmail({
+            webhookHooks: {
+                messageChanged: {
+                    async after(ctx: any, response: any) {
+                        if (response?.data?.type === 'messageReceived' && response?.corsairEntityId) {
+                            const rawMsg = response.data.message;
+                            if (rawMsg) {
+                                const headers = rawMsg.payload?.headers;
+                                const from = getHeader(headers, 'From');
+                                const to = getHeader(headers, 'To');
+                                const subject = getHeader(headers, 'Subject') || '(no subject)';
+                                const body = extractBody(rawMsg.payload) || rawMsg.snippet || '';
+
+                                const normalisedMsg = {
+                                    id: rawMsg.id,
+                                    from,
+                                    to,
+                                    subject,
+                                    body,
+                                    snippet: rawMsg.snippet
+                                };
+
+                                try {
+                                    const { classifyPhishing } = await import('./phishing-detection');
+                                    const analysis = await classifyPhishing(subject, body);
+                                    if (analysis) {
+                                        console.log(`[Phishing Hook] Analyzed message ${response.corsairEntityId}:`, analysis);
+                                        await pool.query(
+                                            `UPDATE corsair_entities 
+                                             SET data = jsonb_set(data, '{phishingAnalysis}', $1::jsonb), updated_at = NOW() 
+                                             WHERE id = $2`,
+                                            [JSON.stringify(analysis), response.corsairEntityId]
+                                        );
+
+                                        const registerRes = await pool.query(
+                                            `INSERT INTO processed_proactive_emails (entity_id) VALUES ($1) ON CONFLICT DO NOTHING`,
+                                            [response.corsairEntityId]
+                                        );
+
+                                        if (registerRes.rowCount && registerRes.rowCount > 0) {
+                                            // Auto-build daily context and trigger proactive AI if safe
+                                            try {
+                                                const tenantId = ctx.tenantId;
+                                                if (tenantId) {
+                                                    const { buildDailyContext, runProactiveAgent } = await import('./user-context');
+                                                    const todayStr = new Date().toISOString().split('T')[0];
+                                                    await buildDailyContext(tenantId, todayStr);
+
+                                                    if (!analysis.isPhishing) {
+                                                        // Trigger proactive agent run asynchronously with normalised message details
+                                                        runProactiveAgent(tenantId, normalisedMsg).catch((err) => {
+                                                            console.error('[Proactive Agent] Run error:', err);
+                                                        });
+                                                    }
+                                                }
+                                            } catch (err) {
+                                                console.error('[Gmail Hook] Daily Context or Proactive Run failed:', err);
+                                            }
+                                        } else {
+                                            console.log(`[Phishing Hook] Proactive run already triggered for message ${response.corsairEntityId}, skipping.`);
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.error('[Phishing Hook] Error running phishing classification:', err);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }),
         googlecalendar({
             webhookHooks: {
                 onEventChanged: {
@@ -36,11 +133,42 @@ export const corsair = createCorsair({
                                     [accountId, event.id, event]
                                 );
                             }
+
+                            // Update Daily Context for the date range of the event
+                            try {
+                                const tenantId = ctx.tenantId || (await pool.query(
+                                    `SELECT tenant_id FROM corsair_accounts WHERE id = $1 LIMIT 1`,
+                                    [accountId]
+                                )).rows[0]?.tenant_id;
+
+                                if (tenantId) {
+                                    const { updateContextForEvent } = await import('./user-context');
+                                    await updateContextForEvent(tenantId, event);
+                                }
+                            } catch (err) {
+                                console.error('[Calendar Hook] Context update failed:', err);
+                            }
                         } else if (response.type === 'eventDeleted') {
                             await pool.query(
                                 `DELETE FROM corsair_entities WHERE account_id = $1 AND entity_id = $2 AND entity_type = 'events'`,
                                 [accountId, response.eventId]
                             );
+
+                            // Rebuild context for today on deletion
+                            try {
+                                const tenantId = ctx.tenantId || (await pool.query(
+                                    `SELECT tenant_id FROM corsair_accounts WHERE id = $1 LIMIT 1`,
+                                    [accountId]
+                                )).rows[0]?.tenant_id;
+
+                                if (tenantId) {
+                                    const { buildDailyContext } = await import('./user-context');
+                                    const todayStr = new Date().toISOString().split('T')[0];
+                                    await buildDailyContext(tenantId, todayStr);
+                                }
+                            } catch (err) {
+                                console.error('[Calendar Hook] Context rebuild on delete failed:', err);
+                            }
                         }
                     }
                 }
@@ -196,7 +324,135 @@ export const corsair = createCorsair({
                                 return;
                             }
 
-                            // 5. Handle AI Chat Mode Interaction
+                            // 5. Handle AI Draft Improvement feedback
+                            if (userState.startsWith('awaiting_improvement:')) {
+                                const draftId = userState.split(':')[1];
+                                await pool.query(`UPDATE "user" SET telegram_state = 'idle' WHERE telegram_chat_id = $1`, [chatId]);
+                                
+                                try {
+                                    // Send loading/acknowledgement message
+                                    const thinkingMsg: any = await botClient.telegram.api.messages.sendMessage({
+                                        chat_id: chatId,
+                                        text: `⚡ *Rewriting draft email based on your feedback...*`
+                                    });
+
+                                    // Fetch draft details
+                                    const draftRes = await pool.query(`SELECT * FROM telegram_drafts WHERE id = $1`, [draftId]);
+                                    if (draftRes.rows.length === 0) {
+                                        await botClient.telegram.api.messages.sendMessage({
+                                            chat_id: chatId,
+                                            text: "❌ Draft not found."
+                                        });
+                                        return;
+                                    }
+                                    const draft = draftRes.rows[0];
+                                    const emailDetails = JSON.parse(draft.email_details);
+
+                                    // Call agent to rewrite
+                                    const agent = await getCorsairAgent(userId);
+                                    const prompt = `You are an AI assistant. You drafted this email draft:
+To: ${emailDetails.to}
+Subject: ${emailDetails.subject}
+Body: ${emailDetails.body}
+
+The user wants to edit/improve it with this feedback: "${text}"
+
+Please output the improved email in this exact JSON format (and ONLY JSON, no markdown blocks, no other text):
+{
+  "to": "recipient email",
+  "subject": "email subject",
+  "body": "improved email body"
+}
+
+Ensure the output is valid JSON.`;
+
+                                    const agentResponse = await agent.generate([
+                                        { role: 'user', content: prompt }
+                                    ]);
+
+                                    const agentText = agentResponse.text || "";
+                                    const jsonMatch = agentText.match(/\{[\s\S]*\}/);
+                                    if (!jsonMatch) {
+                                        throw new Error("Failed to parse improved draft JSON from agent response: " + agentText);
+                                    }
+
+                                    const updatedDetails = JSON.parse(jsonMatch[0]);
+                                    if (!updatedDetails.to || !updatedDetails.subject || !updatedDetails.body) {
+                                        throw new Error("Invalid draft structure returned from agent: " + jsonMatch[0]);
+                                    }
+
+                                    // Ensure signature
+                                    const userDetailsRes = await pool.query(`SELECT name FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
+                                    const userName = userDetailsRes.rows[0]?.name || 'User';
+                                    if (!updatedDetails.body.includes(userName) && !updatedDetails.body.includes('Best,')) {
+                                        updatedDetails.body += `\n\nBest,\n${userName}`;
+                                    }
+
+                                    // Update database
+                                    await pool.query(
+                                        `UPDATE telegram_drafts SET email_details = $1 WHERE id = $2`,
+                                        [JSON.stringify(updatedDetails), draftId]
+                                    );
+
+                                    // If we had a previous message ID, edit it
+                                    if (draft.telegram_message_id) {
+                                        try {
+                                            await botClient.telegram.api.messages.editMessageText({
+                                                chat_id: chatId,
+                                                message_id: parseInt(draft.telegram_message_id, 10),
+                                                text: `✉️ *Draft Email Updated:*\n\n*To:* ${updatedDetails.to}\n*Subject:* ${updatedDetails.subject}\n\n*Body:*\n${updatedDetails.body}\n\nDo you want to send this email?`,
+                                                parse_mode: 'Markdown',
+                                                reply_markup: {
+                                                    inline_keyboard: [
+                                                        [
+                                                            { text: "✅ Approve & Send", callback_data: `email_approve:${draftId}` },
+                                                            { text: "❌ Discard", callback_data: `email_reject:${draftId}` }
+                                                        ],
+                                                        [
+                                                            { text: "✍️ Suggest Improvement", callback_data: `email_improve:${draftId}` }
+                                                        ]
+                                                    ]
+                                                }
+                                            });
+
+                                            // Delete the "Rewriting..." temporary notification
+                                            const thinkingMsgId = thinkingMsg?.message_id || thinkingMsg?.result?.message_id;
+                                            if (thinkingMsgId) {
+                                                await botClient.telegram.api.messages.deleteMessage({
+                                                    chat_id: chatId,
+                                                    message_id: thinkingMsgId
+                                                });
+                                            }
+                                        } catch (telegramErr) {
+                                            console.error("Failed to edit Telegram message:", telegramErr);
+                                            await botClient.telegram.api.messages.sendMessage({
+                                                chat_id: chatId,
+                                                text: `✉️ *Draft Email Updated:*\n\n*To:* ${updatedDetails.to}\n*Subject:* ${updatedDetails.subject}\n\n*Body:*\n${updatedDetails.body}`,
+                                                reply_markup: {
+                                                    inline_keyboard: [
+                                                        [
+                                                            { text: "✅ Approve & Send", callback_data: `email_approve:${draftId}` },
+                                                            { text: "❌ Discard", callback_data: `email_reject:${draftId}` }
+                                                        ],
+                                                        [
+                                                            { text: "✍️ Suggest Improvement", callback_data: `email_improve:${draftId}` }
+                                                        ]
+                                                    ]
+                                                }
+                                            });
+                                        }
+                                    }
+                                } catch (err: any) {
+                                    console.error('Improvement drafting error:', err);
+                                    await botClient.telegram.api.messages.sendMessage({
+                                        chat_id: chatId,
+                                        text: `⚠️ Sorry, I encountered an error rewriting the draft: ${err.message}`
+                                    });
+                                }
+                                return;
+                            }
+
+                            // 6. Handle AI Chat Mode Interaction
                             if (userState === 'chatting') {
                                 // Run the message through your Mastra Agent
                                 try {
@@ -297,6 +553,23 @@ export const corsair = createCorsair({
                                 parse_mode: 'Markdown'
                             });
                             await pool.query(`UPDATE telegram_drafts SET status = 'rejected' WHERE id = $1`, [payloadString]);
+                        }
+
+                        // Handle Improve Action
+                        if (action === 'email_improve') {
+                            try {
+                                await botClient.telegram.api.messages.sendMessage({
+                                    chat_id: chatId,
+                                    text: `✍️ *Please type and send your suggested improvements for this draft email.* I will automatically rewrite it for you.`
+                                });
+                                // Set state to awaiting improvement
+                                await pool.query(
+                                    `UPDATE "user" SET telegram_state = $1 WHERE id = $2`,
+                                    [`awaiting_improvement:${payloadString}`, userId]
+                                );
+                            } catch (err: any) {
+                                console.error("Failed to start improvement flow:", err);
+                            }
                         }
                     }
                 }

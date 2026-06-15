@@ -23,9 +23,9 @@ export default async function SetupAgentPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Setup AI Agent</h1>
-        <p className="text-muted-foreground mt-2">
+      <div className="mb-8 border-b-4 border-black dark:border-white pb-6">
+        <h1 className="text-3xl font-black uppercase tracking-tighter text-black dark:text-white">Setup AI Agent</h1>
+        <p className="text-xs font-bold uppercase tracking-wider text-black/60 dark:text-white/60 mt-2 leading-relaxed">
           Configure your personal AI assistant. The assistant will handle your calls, check your availability, and schedule meetings on your calendar.
         </p>
       </div>
