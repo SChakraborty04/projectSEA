@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import * as z from "zod"
+import { useState, useEffect, useCallback } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,7 +24,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { signup } from "@/actions/signup"
 
@@ -51,6 +51,7 @@ export function SignupForm({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,21 +63,34 @@ export function SignupForm({
     },
   })
 
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown <= 0) {
+      router.push("/dashboard");
+      return;
+    }
+    const timer = setTimeout(() => setCountdown((c) => (c !== null ? c - 1 : null)), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, router]);
+
+  const handleRedirect = useCallback(() => {
+    toast.success("Signed up successfully!");
+    setCountdown(3);
+  }, []);
+
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    try{
-      setLoading(true)
-      const result = await signup(data)
+    try {
+      setLoading(true);
+      const result = await signup(data);
       if (result.success) {
-        toast.success("Signed up successfully!")
-        await new Promise((r) => setTimeout(r, 1500))
-        router.push("/dashboard")
+        handleRedirect();
       } else {
-        toast.error(result.error)
+        toast.error(result.error);
       }
-    } catch (e) {
-      toast.error("An unexpected error occurred. Please try again.")
+    } catch {
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
   return (
@@ -221,8 +235,12 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Creating Account..." : "Create Account"}
+                <Button type="submit" disabled={loading || countdown !== null}>
+                  {countdown !== null
+                    ? `Redirecting in ${countdown}...`
+                    : loading
+                      ? "Creating Account..."
+                      : "Create Account"}
                 </Button>
                 <FieldDescription className="text-center">
                   Already have an account? <Link href="/signin">Sign in</Link>

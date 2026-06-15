@@ -26,6 +26,9 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("antialiased", fontMono.variable, "font-sans", notoSans.variable, nunitoSansHeading.variable)}
     >
+      <head>
+        <meta name="google-site-verification" content="fidbxHSJKJdRPgb5ex6pFkOpwwRDfFYgUz6Kpcq5VqA" />
+      </head>
       <body>
         
         <ThemeProvider>

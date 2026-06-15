@@ -7,11 +7,25 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  telegramChatId: text('telegram_chat_id'),
+  telegramState: text('telegram_state').default('idle'),
+  telegramConnectionCode: text('telegram_connection_code'),
+  telegramCodeExpiresAt: timestamp('telegram_code_expires_at'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+});
+
+export const telegramDrafts = pgTable("telegram_drafts", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  emailDetails: text("email_details").notNull(),
+  telegramMessageId: text("telegram_message_id"),
+  telegramChatId: text("telegram_chat_id"),
+  status: text("status").default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const session = pgTable(

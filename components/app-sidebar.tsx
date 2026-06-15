@@ -1,7 +1,6 @@
-
 import * as React from "react"
+import Link from "next/link"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -15,45 +14,22 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { DashboardSquare01Icon, Menu01Icon, ChartHistogramIcon, Folder01Icon, UserGroupIcon, Camera01Icon, File01Icon, Settings05Icon, HelpCircleIcon, SearchIcon, Database01Icon, Analytics01Icon, CommandIcon, ChatIcon } from "@hugeicons/core-free-icons"
-import { getSession } from "@/lib/session"
+import { DashboardSquare01Icon, Mail01Icon, Calendar01Icon, Settings05Icon, HelpCircleIcon, SearchIcon, CommandIcon, ChatIcon } from "@hugeicons/core-free-icons"
+import { Plus } from "lucide-react"
 
+import { getSession } from "@/lib/session"
+import { db } from "@/db"
+import { agentProfiles } from "@/db/schema/agent"
+import { eq } from "drizzle-orm"
+import { AgentMicButton } from "@/components/agent-mic-button"
 
 const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: (
         <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      title: "Lifecycle",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Menu01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      title: "Analytics",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={ChartHistogramIcon} strokeWidth={2} />
-      ),
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Folder01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
       ),
     },
     {
@@ -63,59 +39,19 @@ const data = {
         <HugeiconsIcon icon={ChatIcon} strokeWidth={2} />
       ),
     },
-  ],
-  navClouds: [
     {
-      title: "Capture",
+      title: "Email",
+      url: "/dashboard/email",
       icon: (
-        <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} />
+        <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} />
       ),
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
     },
     {
-      title: "Proposal",
+      title: "Calendar",
+      url: "/dashboard/calendar",
       icon: (
-        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
+        <HugeiconsIcon icon={Calendar01Icon} strokeWidth={2} />
       ),
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: (
-        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
     },
   ],
   navSecondary: [
@@ -141,33 +77,18 @@ const data = {
       ),
     },
   ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Analytics01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
-      ),
-    },
-  ],
 }
 
 export async function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
    const session = await getSession();
+   let agentProfile = null;
+   if (session?.user?.id) {
+     const profiles = await db.select().from(agentProfiles).where(eq(agentProfiles.userId, session.user.id));
+     if (profiles.length > 0) {
+       agentProfile = profiles[0];
+     }
+   }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -186,8 +107,41 @@ export async function AppSidebar({ ...props }: React.ComponentProps<typeof Sideb
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        <div className="px-2 py-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              {agentProfile ? (
+                <SidebarMenuButton
+                  className="data-[slot=sidebar-menu-button]:p-1.5! h-auto bg-muted/50 border border-border"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <HugeiconsIcon icon={CommandIcon} strokeWidth={2} className="size-4 text-primary" />
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-semibold">{agentProfile.agentName}</span>
+                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">{agentProfile.companyName || "AI Assistant"}</span>
+                      </div>
+                    </div>
+                    <AgentMicButton />
+                  </div>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton
+                  asChild
+                  className="data-[slot=sidebar-menu-button]:p-1.5! bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground h-10"
+                >
+                  <Link href="/dashboard/agent/setup" className="flex items-center justify-center gap-2 w-full">
+                    <Plus className="size-4" />
+                    <span className="font-semibold">Setup Agent!</span>
+                  </Link>
+                </SidebarMenuButton>
+              )}
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

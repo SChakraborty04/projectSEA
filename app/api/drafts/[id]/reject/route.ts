@@ -1,0 +1,50 @@
+import { getSession } from '@/lib/session';
+import { pool } from '@/db/index';
+import { corsair } from '@/lib/corsair';
+
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await params;
+        const session = await getSession();
+        const accountId = session?.user?.id;
+        if (!accountId) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+        }
+
+        // Fetch draft
+        const draftRes = await pool.query(
+            `SELECT * FROM telegram_drafts WHERE id = $1 AND tenant_id = $2`,
+            [id, accountId]
+        );
+
+        if (draftRes.rows.length === 0) {
+            return new Response(JSON.stringify({ error: "Draft not found or already processed" }), { status: 404 });
+        }
+
+        const draft = draftRes.rows[0];
+
+        // Update Telegram message if linked
+        if (draft.telegram_message_id && draft.telegram_chat_id) {
+            try {
+                const botClient = corsair.withTenant('default');
+                await botClient.telegram.api.messages.editMessageText({
+                    chat_id: draft.telegram_chat_id,
+                    message_id: parseInt(draft.telegram_message_id, 10),
+                    text: `❌ *Draft Rejected & Discarded via Dashboard.*`,
+                    parse_mode: 'Markdown'
+                });
+            } catch (telegramErr) {
+                console.error("Failed to update telegram message:", telegramErr);
+            }
+        }
+
+        // Update draft status
+        await pool.query(`UPDATE telegram_drafts SET status = 'rejected' WHERE id = $1`, [id]);
+
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+
+    } catch (error: any) {
+        console.error("Failed to reject draft:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
+}

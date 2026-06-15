@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { signin } from "@/actions/signin"
 
@@ -37,6 +37,7 @@ export function SigninForm({
 }: React.ComponentProps<"div">) {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
   const router = useRouter()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,18 +47,31 @@ export function SigninForm({
     },
   })
 
+  useEffect(() => {
+    if (countdown === null) return
+    if (countdown <= 0) {
+      router.push("/dashboard")
+      return
+    }
+    const timer = setTimeout(() => setCountdown((c) => (c !== null ? c - 1 : null)), 1000)
+    return () => clearTimeout(timer)
+  }, [countdown, router])
+
+  const handleRedirect = useCallback(() => {
+    toast.success("Signed in successfully!")
+    setCountdown(3)
+  }, [])
+
   async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
       setLoading(true)
       const result = await signin(data)
       if (result.success) {
-        toast.success("Signed in successfully!")
-        await new Promise((r) => setTimeout(r, 1500))
-        router.push("/dashboard")
+        handleRedirect()
       } else {
         toast.error(result.error)
       }
-    } catch (e) {
+    } catch {
       toast.error("An unexpected error occurred. Please try again.")
     } finally {
       setLoading(false)
@@ -168,8 +182,12 @@ export function SigninForm({
                 )}
               />
               <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Logging in..." : "Signin"}
+                <Button type="submit" disabled={loading || countdown !== null}>
+                  {countdown !== null
+                    ? `Redirecting in ${countdown}...`
+                    : loading
+                      ? "Logging in..."
+                      : "Signin"}
                 </Button>
                 <FieldDescription className="text-center">
                   Don&apos;t have an account? <Link href="/signup">Sign Up</Link>
