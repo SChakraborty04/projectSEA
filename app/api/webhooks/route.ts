@@ -61,11 +61,14 @@ export async function POST(request: NextRequest) {
         }
     }
 
+    const isTelegram = tenantId === 'default' || (typeof body === 'object' && body?.update_id);
+
     console.log('[Webhook Debug] Final tenantId:', tenantId);
 
     // If QStash Token is configured, queue the request. Otherwise fall back to synchronous execution.
+    // We bypass QStash for Telegram webhooks to ensure instant response times and avoid QStash signature verification/delivery issues in production.
     const qstashToken = process.env.QSTASH_TOKEN;
-    if (qstashToken) {
+    if (qstashToken && !isTelegram) {
         try {
             const qstash = new Client({ token: qstashToken });
             await qstash.publishJSON({
