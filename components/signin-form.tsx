@@ -171,7 +171,7 @@ export function SigninForm({
                         id="password"
                         type={showPassword ? "text" : "password"}
                         aria-invalid={fieldState.invalid}
-                        className="pr-10 border-4 border-black dark:border-white focus-visible:ring-0 focus-visible:bg-[#FFD93D] dark:focus-visible:bg-[#db6802] focus-visible:text-black rounded-none px-3 py-3 font-bold text-black dark:text-white bg-white dark:bg-[#121214] focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30 placeholder:uppercase text-xs tracking-wider"
+                        className="pr-10 border-4 border-black dark:border-white focus-visible:ring-0 focus-visible:bg-[#FFD93D] dark:focus-visible:bg-[#db6802] focus-visible:text-black rounded-none px-3 py-3 font-bold text-black dark:text-white bg-white dark:bg-[#121214] focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30 normal-case placeholder:uppercase text-xs tracking-wider"
                       />
                       <button
                         type="button"
