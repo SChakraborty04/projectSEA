@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { pool } from '@/db/index';
-import { corsair } from '@/lib/corsair';
 import { getAppUrl } from '@/lib/utils';
 
 export async function POST(req: Request) {
@@ -42,9 +41,10 @@ export async function POST(req: Request) {
             );
         }
 
-        // 3. Register the webhook via Corsair — wrapped in try/catch so an ISP that
-        //    blocks api.telegram.org (common in India) doesn't kill code generation.
-        const client = corsair.withTenant('default');
+        // 3. Register the webhook via native fetch (no Corsair wrapper).
+        //    Wrapped in try/catch so an ISP blocking api.telegram.org doesn't
+        //    prevent connection code generation.
+        const TELEGRAM_API = `https://api.telegram.org/bot${botToken}`;
         const webhookUrl = `${getAppUrl()}/api/webhooks`;
         const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET || 'superea_telegram_secret';
 
@@ -53,17 +53,36 @@ export async function POST(req: Request) {
 
         try {
             console.log(`[Telegram Setup] Registering webhook: ${webhookUrl}`);
-            await client.telegram.api.webhook.setWebhook({
-                url: webhookUrl,
-                secret_token: webhookSecret,
-            });
-            console.log('[Telegram Setup] setWebhook OK');
 
-            // 4. Retrieve the bot username dynamically
-            const botInfo = await client.telegram.api.me.getMe({});
-            botUsername = botInfo.username??"";
+            const setWebhookRes = await fetch(`${TELEGRAM_API}/setWebhook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: webhookUrl,
+                    secret_token: webhookSecret,
+                    allowed_updates: ['message', 'callback_query'],
+                }),
+                signal: AbortSignal.timeout(8000),
+            });
+
+            const setWebhookData = await setWebhookRes.json() as any;
+            if (!setWebhookData.ok) {
+                console.error('[Telegram Setup] setWebhook rejected:', setWebhookData);
+                webhookWarning = `Telegram rejected setWebhook: ${setWebhookData.description}`;
+            } else {
+                console.log('[Telegram Setup] setWebhook OK');
+
+                // 4. Fetch bot username
+                const getMeRes = await fetch(`${TELEGRAM_API}/getMe`, {
+                    signal: AbortSignal.timeout(8000),
+                });
+                const getMeData = await getMeRes.json() as any;
+                if (getMeData.ok) {
+                    botUsername = getMeData.result.username ?? '';
+                }
+            }
         } catch (networkErr: any) {
-            // Detect ISP-level connectivity blocks (ConnectTimeoutError, fetch failed, etc.)
+            // ISP or firewall is blocking api.telegram.org
             const causeCode: string = networkErr?.cause?.code ?? '';
             const causeMsg: string = networkErr?.message ?? '';
             const isNetworkBlock =
@@ -76,23 +95,21 @@ export async function POST(req: Request) {
             if (isNetworkBlock) {
                 console.warn(
                     `[Telegram Setup] ISP is blocking api.telegram.org ` +
-                    `(${causeCode || causeMsg}). ` +
-                    `Webhook registration skipped — connection code still saved.`
+                    `(${causeCode || causeMsg}). Webhook skipped — code still saved.`
                 );
                 webhookWarning =
-                    `⚠️ Your ISP or network is blocking connections to Telegram's servers ` +
-                    `(api.telegram.org). The 6-digit connection code below is still valid. ` +
-                    `Open the bot on your phone and send it the code to link your account. ` +
-                    `Webhook registration works correctly on the production server.`;
+                    '⚠️ Your ISP or network is blocking connections to Telegram\'s servers ' +
+                    '(api.telegram.org). The 6-digit connection code below is still valid. ' +
+                    'Open the bot on your phone and send it the code to link your account. ' +
+                    'Webhook registration works correctly on the production server.';
             } else {
-                // Re-throw unexpected errors so they surface properly
                 throw networkErr;
             }
         }
 
-        // 5. Generate a 6-digit connection code, reset the linked chat, and store the code
+        // 5. Generate a 6-digit connection code, reset linked chat, and persist
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // expires in 15 minutes
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
         await pool.query(
             `UPDATE "user" SET telegram_connection_code = $1, telegram_code_expires_at = $2, telegram_chat_id = NULL WHERE id = $3`,

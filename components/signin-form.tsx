@@ -82,6 +82,22 @@ export function SigninForm({
     setCountdown(3)
   }, [])
 
+  const resendVerificationEmail = async (email: string) => {
+    try {
+      const res = await authClient.sendVerificationEmail({
+        email,
+        callbackURL: "/dashboard",
+      })
+      if (res.error) {
+        toast.error(res.error.message || "Failed to resend verification email")
+      } else {
+        toast.success("Verification email sent! Check your inbox.")
+      }
+    } catch {
+      toast.error("Failed to resend. Please try again.")
+    }
+  }
+
   async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
       setLoading(true)
@@ -89,7 +105,25 @@ export function SigninForm({
       if (result.success) {
         handleRedirect()
       } else {
-        toast.error(result.error)
+        const isUnverified =
+          result.error?.toLowerCase().includes("not verified") ||
+          result.error?.toLowerCase().includes("email not verified") ||
+          result.error?.toLowerCase().includes("verify your email")
+
+        if (isUnverified) {
+          toast.error(
+            "Email not verified. Please check your inbox or resend the link.",
+            {
+              duration: 10000,
+              action: {
+                label: "Resend verification email",
+                onClick: () => resendVerificationEmail(data.email),
+              },
+            }
+          )
+        } else {
+          toast.error(result.error)
+        }
       }
     } catch {
       toast.error("An unexpected error occurred. Please try again.")

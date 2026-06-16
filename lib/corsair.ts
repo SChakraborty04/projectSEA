@@ -6,6 +6,84 @@ import { pool } from '../db/index';
 import { telegram } from '@corsair-dev/telegram';
 import { getCorsairAgent } from './agent';
 
+/**
+ * Send a Telegram message via native fetch, bypassing the Corsair client.
+ * The Corsair client uses its own fetch implementation that can fail due to
+ * ISP-level blocks on api.telegram.org. Native fetch is more reliable.
+ */
+async function sendTelegramMessage(chatId: string, text: string, extra: Record<string, any> = {}): Promise<any> {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) {
+        console.error('[TelegramSend] TELEGRAM_BOT_TOKEN not set');
+        return;
+    }
+    try {
+        const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text, ...extra }),
+            signal: AbortSignal.timeout(8000),
+        });
+        const data = await res.json() as any;
+        if (!data.ok) {
+            console.error(`[TelegramSend] Telegram rejected message to ${chatId}:`, data.description);
+        }
+        return data.result;
+    } catch (err: any) {
+        console.warn(`[TelegramSend] Could not reach api.telegram.org (${err?.cause?.code ?? err?.message}). Message not delivered.`);
+    }
+}
+
+async function editTelegramMessage(chatId: string, messageId: number, text: string, extra: Record<string, any> = {}): Promise<any> {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) return;
+    try {
+        const res = await fetch(`https://api.telegram.org/bot${botToken}/editMessageText`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, ...extra }),
+            signal: AbortSignal.timeout(8000),
+        });
+        const data = await res.json() as any;
+        if (!data.ok) {
+            console.error(`[TelegramEdit] Telegram rejected edit for message ${messageId}:`, data.description);
+        }
+        return data.result;
+    } catch (err: any) {
+        console.warn(`[TelegramEdit] Could not reach api.telegram.org (${err?.cause?.code ?? err?.message}).`);
+    }
+}
+
+async function deleteTelegramMessage(chatId: string, messageId: number): Promise<void> {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) return;
+    try {
+        await fetch(`https://api.telegram.org/bot${botToken}/deleteMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, message_id: messageId }),
+            signal: AbortSignal.timeout(8000),
+        });
+    } catch (err: any) {
+        console.warn(`[TelegramDelete] Could not reach api.telegram.org (${err?.cause?.code ?? err?.message}).`);
+    }
+}
+
+async function answerTelegramCallbackQuery(callbackQueryId: string, text?: string): Promise<void> {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) return;
+    try {
+        await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ callback_query_id: callbackQueryId, ...(text ? { text } : {}) }),
+            signal: AbortSignal.timeout(8000),
+        });
+    } catch (err: any) {
+        console.warn(`[TelegramCallback] Could not reach api.telegram.org (${err?.cause?.code ?? err?.message}).`);
+    }
+}
+
 function getHeader(headers: any[] | undefined, name: string): string {
     return headers?.find((h: any) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? '';
 }
@@ -185,15 +263,12 @@ export const corsair = createCorsair({
                             const text = message.text.trim();
                             const chatId = message.chat.id.toString();
                             console.log(`[Telegram Bot] Message received. chatId: ${chatId}, text: "${text}"`);
-                            const botClient = corsair.withTenant('default'); // The global bot client
-
                             // 1. Handle /start (Onboarding Deep Linking)
                             if (text.startsWith('/start')) {
-                                await botClient.telegram.api.messages.sendMessage({
-                                    chat_id: chatId,
-                                    text: "👋 *Welcome to SuperEA!*\n\nPlease enter the 6-digit connection code from your dashboard to connect your account.",
-                                    parse_mode: 'Markdown'
-                                });
+                                await sendTelegramMessage(chatId,
+                                    "👋 *Welcome to SuperEA\!*\n\nPlease enter the 6\-digit connection code from your dashboard to connect your account\.",
+                                    { parse_mode: 'MarkdownV2' }
+                                );
                                 return;
                             }
 
@@ -212,20 +287,18 @@ export const corsair = createCorsair({
                                         `UPDATE "user" SET telegram_chat_id = $1, telegram_state = 'idle', telegram_connection_code = NULL, telegram_code_expires_at = NULL WHERE id = $2`,
                                         [chatId, userId]
                                     );
-                                    await botClient.telegram.api.messages.sendMessage({
-                                        chat_id: chatId,
-                                        text: "✅ *Account Successfully Connected!*\n\nUse these commands to interact with your assistant:\n" +
-                                              "• `/calendar` - See upcoming events\n" +
-                                              "• `/email` - See recent emails\n" +
-                                              "• `/chat` - Enter chat mode with AI Agent\n",
-                                        parse_mode: 'Markdown'
-                                    });
+                                    await sendTelegramMessage(chatId,
+                                        "✅ *Account Successfully Connected\!*\n\nUse these commands to interact with your assistant:\n" +
+                                        "• `/calendar` \- See upcoming events\n" +
+                                        "• `/email` \- See recent emails\n" +
+                                        "• `/chat` \- Enter chat mode with AI Agent",
+                                        { parse_mode: 'MarkdownV2' }
+                                    );
                                 } else {
-                                    await botClient.telegram.api.messages.sendMessage({
-                                        chat_id: chatId,
-                                        text: "❌ *Invalid or expired code.*\nPlease generate a new code from your dashboard and try again.",
-                                        parse_mode: 'Markdown'
-                                    });
+                                    await sendTelegramMessage(chatId,
+                                        "❌ *Invalid or expired code\.* Please generate a new code from your dashboard and try again\.",
+                                        { parse_mode: 'MarkdownV2' }
+                                    );
                                 }
                                 return;
                             }
@@ -237,10 +310,7 @@ export const corsair = createCorsair({
                             );
 
                             if (userRes.rows.length === 0) {
-                                await botClient.telegram.api.messages.sendMessage({
-                                    chat_id: chatId,
-                                    text: "⚠️ You have not connected your account yet. Please connect via the dashboard."
-                                });
+                                await sendTelegramMessage(chatId, "⚠️ You have not connected your account yet\. Please connect via the dashboard\.", { parse_mode: 'MarkdownV2' });
                                 return;
                             }
 
@@ -261,19 +331,15 @@ export const corsair = createCorsair({
                                 );
                                 
                                 if (eventsRes.rows.length === 0) {
-                                    await botClient.telegram.api.messages.sendMessage({ chat_id: chatId, text: "📅 No upcoming events found." });
+                                    await sendTelegramMessage(chatId, '📅 No upcoming events found\.');
                                     return;
                                 }
                                 const eventLines = eventsRes.rows.map((row: any) => {
                                     const ev = row.data;
                                     const date = ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleString() : 'All Day';
-                                    return `• *${ev.summary || 'Untitled'}*\n  Time: ${date}`;
+                                    return `• *${(ev.summary || 'Untitled').replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&')}*\n  Time: ${date}`;
                                 }).join('\n\n');
-                                await botClient.telegram.api.messages.sendMessage({
-                                    chat_id: chatId,
-                                    text: `📅 *Upcoming Events:*\n\n${eventLines}`,
-                                    parse_mode: 'Markdown'
-                                });
+                                await sendTelegramMessage(chatId, `📅 *Upcoming Events:*\n\n${eventLines}`, { parse_mode: 'MarkdownV2' });
                                 return;
                             }
 
@@ -290,40 +356,33 @@ export const corsair = createCorsair({
                                     [userId]
                                 );
                                 if (emailRes.rows.length === 0) {
-                                    await botClient.telegram.api.messages.sendMessage({ chat_id: chatId, text: "✉️ No recent emails found." });
+                                    await sendTelegramMessage(chatId, '✉️ No recent emails found\.');
                                     return;
                                 }
                                 const emailLines = emailRes.rows.map((row: any) => {
                                     const msg = row.data;
                                     const subject = msg.payload?.headers?.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
                                     const from = msg.payload?.headers?.find((h: any) => h.name === 'From')?.value || 'Unknown';
-                                    return `• *Subject*: ${subject}\n  *From*: ${from}`;
+                                    return `• *Subject*: ${subject.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&')}\n  *From*: ${from.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&')}`;
                                 }).join('\n\n');
-                                await botClient.telegram.api.messages.sendMessage({
-                                    chat_id: chatId,
-                                    text: `✉️ *Recent Emails:*\n\n${emailLines}`,
-                                    parse_mode: 'Markdown'
-                                });
+                                await sendTelegramMessage(chatId, `✉️ *Recent Emails:*\n\n${emailLines}`, { parse_mode: 'MarkdownV2' });
                                 return;
                             }
 
                             // 4. Handle /chat Command
                             if (text === '/chat') {
                                 await pool.query(`UPDATE "user" SET telegram_state = 'chatting' WHERE telegram_chat_id = $1`, [chatId]);
-                                await botClient.telegram.api.messages.sendMessage({
-                                    chat_id: chatId,
-                                    text: "💬 *Chat Mode Active.*\nWrite anything and your AI agent will respond. Send `/exit` to stop chatting."
-                                });
+                                await sendTelegramMessage(chatId,
+                                    "💬 *Chat Mode Active\.* Write anything and your AI agent will respond\. Send `/exit` to stop chatting\.",
+                                    { parse_mode: 'MarkdownV2' }
+                                );
                                 return;
                             }
 
                             // Exit Chat Mode
                             if (text === '/exit' && userState === 'chatting') {
                                 await pool.query(`UPDATE "user" SET telegram_state = 'idle' WHERE telegram_chat_id = $1`, [chatId]);
-                                await botClient.telegram.api.messages.sendMessage({
-                                    chat_id: chatId,
-                                    text: "🚪 Left Chat Mode. Commands (/calendar, /email) are active."
-                                });
+                                await sendTelegramMessage(chatId, '🚪 Left Chat Mode\. Commands \(/calendar, /email\) are active\.');
                                 return;
                             }
 
@@ -334,10 +393,7 @@ export const corsair = createCorsair({
                                 
                                 try {
                                     // Send loading/acknowledgement message
-                                    const thinkingMsg: any = await botClient.telegram.api.messages.sendMessage({
-                                        chat_id: chatId,
-                                        text: `⚡ *Rewriting draft email based on your feedback...*`
-                                    });
+                                    const thinkingMsg: any = await sendTelegramMessage(chatId, '⚡ Rewriting draft email based on your feedback\.\.\.');
 
                                     // Fetch draft details
                                     const draftRes = await pool.query(`SELECT * FROM telegram_drafts WHERE id = $1`, [draftId]);
@@ -398,82 +454,44 @@ Ensure the output is valid JSON.`;
                                     );
 
                                     // If we had a previous message ID, edit it
+                                    const inlineKeyboard = {
+                                        inline_keyboard: [
+                                            [
+                                                { text: "✅ Approve & Send", callback_data: `email_approve:${draftId}` },
+                                                { text: "❌ Discard", callback_data: `email_reject:${draftId}` }
+                                            ],
+                                            [
+                                                { text: "✍️ Suggest Improvement", callback_data: `email_improve:${draftId}` }
+                                            ]
+                                        ]
+                                    };
+                                    const updatedText = `✉️ Draft Email Updated:\n\nTo: ${updatedDetails.to}\nSubject: ${updatedDetails.subject}\n\nBody:\n${updatedDetails.body}\n\nDo you want to send this email?`;
                                     if (draft.telegram_message_id) {
-                                        try {
-                                            await botClient.telegram.api.messages.editMessageText({
-                                                chat_id: chatId,
-                                                message_id: parseInt(draft.telegram_message_id, 10),
-                                                text: `✉️ *Draft Email Updated:*\n\n*To:* ${updatedDetails.to}\n*Subject:* ${updatedDetails.subject}\n\n*Body:*\n${updatedDetails.body}\n\nDo you want to send this email?`,
-                                                parse_mode: 'Markdown',
-                                                reply_markup: {
-                                                    inline_keyboard: [
-                                                        [
-                                                            { text: "✅ Approve & Send", callback_data: `email_approve:${draftId}` },
-                                                            { text: "❌ Discard", callback_data: `email_reject:${draftId}` }
-                                                        ],
-                                                        [
-                                                            { text: "✍️ Suggest Improvement", callback_data: `email_improve:${draftId}` }
-                                                        ]
-                                                    ]
-                                                }
-                                            });
-
-                                            // Delete the "Rewriting..." temporary notification
-                                            const thinkingMsgId = thinkingMsg?.message_id || thinkingMsg?.result?.message_id;
-                                            if (thinkingMsgId) {
-                                                await botClient.telegram.api.messages.deleteMessage({
-                                                    chat_id: chatId,
-                                                    message_id: thinkingMsgId
-                                                });
-                                            }
-                                        } catch (telegramErr) {
-                                            console.error("Failed to edit Telegram message:", telegramErr);
-                                            await botClient.telegram.api.messages.sendMessage({
-                                                chat_id: chatId,
-                                                text: `✉️ *Draft Email Updated:*\n\n*To:* ${updatedDetails.to}\n*Subject:* ${updatedDetails.subject}\n\n*Body:*\n${updatedDetails.body}`,
-                                                reply_markup: {
-                                                    inline_keyboard: [
-                                                        [
-                                                            { text: "✅ Approve & Send", callback_data: `email_approve:${draftId}` },
-                                                            { text: "❌ Discard", callback_data: `email_reject:${draftId}` }
-                                                        ],
-                                                        [
-                                                            { text: "✍️ Suggest Improvement", callback_data: `email_improve:${draftId}` }
-                                                        ]
-                                                    ]
-                                                }
-                                            });
-                                        }
+                                        await editTelegramMessage(chatId, parseInt(draft.telegram_message_id, 10), updatedText, { reply_markup: inlineKeyboard });
+                                        // Delete the "Rewriting..." loading message
+                                        const thinkingMsgId = thinkingMsg?.message_id;
+                                        if (thinkingMsgId) await deleteTelegramMessage(chatId, thinkingMsgId);
+                                    } else {
+                                        await sendTelegramMessage(chatId, updatedText, { reply_markup: inlineKeyboard });
                                     }
                                 } catch (err: any) {
                                     console.error('Improvement drafting error:', err);
-                                    await botClient.telegram.api.messages.sendMessage({
-                                        chat_id: chatId,
-                                        text: `⚠️ Sorry, I encountered an error rewriting the draft: ${err.message}`
-                                    });
+                                    await sendTelegramMessage(chatId, `⚠️ Sorry, I encountered an error rewriting the draft: ${err.message}`);
                                 }
                                 return;
                             }
 
                             // 6. Handle AI Chat Mode Interaction
                             if (userState === 'chatting') {
-                                // Run the message through your Mastra Agent
                                 try {
                                     const agent = await getCorsairAgent(userId);
                                     const agentResponse = await agent.generate([
                                         { role: 'user', content: text }
                                     ]);
-                                    
-                                    await botClient.telegram.api.messages.sendMessage({
-                                        chat_id: chatId,
-                                        text: agentResponse.text || "I processed that request."
-                                    });
+                                    await sendTelegramMessage(chatId, agentResponse.text || 'I processed that request.');
                                 } catch (err) {
                                     console.error('Agent chat error:', err);
-                                    await botClient.telegram.api.messages.sendMessage({
-                                        chat_id: chatId,
-                                        text: "⚠️ Sorry, I encountered an error running your agent."
-                                    });
+                                    await sendTelegramMessage(chatId, '⚠️ Sorry, I encountered an error running your agent.');
                                 }
                             }
                         }
@@ -501,13 +519,10 @@ Ensure the output is valid JSON.`;
                         const userId = userRes.rows[0].id;
                         console.log(`[Telegram Bot] User found: ${userId}. Initializing clients.`);
 
-                        const botClient = corsair.withTenant('default');
                         const userClient = corsair.withTenant(userId);
 
                         // Answer the callback query to remove Telegram's loading spinner
-                        await botClient.telegram.api.callback.answerCallbackQuery({
-                            callback_query_id: callbackQuery.id
-                        });
+                        await answerTelegramCallbackQuery(callbackQuery.id);
 
                         // Handle Approve Action
                         if (action === 'email_approve') {
@@ -516,10 +531,7 @@ Ensure the output is valid JSON.`;
                                 const draftRes = await pool.query(`SELECT email_details FROM telegram_drafts WHERE id = $1`, [payloadString]);
                                 if (draftRes.rows.length === 0) {
                                     console.warn(`[Telegram Bot] Approve failed: Draft ${payloadString} not found in database.`);
-                                    await botClient.telegram.api.messages.sendMessage({
-                                        chat_id: chatId,
-                                        text: "❌ Draft not found or already processed."
-                                    });
+                                    await sendTelegramMessage(chatId, '❌ Draft not found or already processed.');
                                     return;
                                 }
                                 const emailDetails = JSON.parse(draftRes.rows[0].email_details);
@@ -537,34 +549,25 @@ Ensure the output is valid JSON.`;
                                 });
 
                                 // Edit original message to show action completed via bot
-                                await botClient.telegram.api.messages.editMessageText({
-                                    chat_id: chatId,
-                                    message_id: callbackQuery.message?.message_id,
-                                    text: `✅ *Approved and Sent:*\n\n*To:* ${emailDetails.to}\n*Subject:* ${emailDetails.subject}\n\n*Status:* Sent successfully.`,
-                                    parse_mode: 'Markdown'
-                                });
+                                await editTelegramMessage(
+                                    chatId,
+                                    callbackQuery.message?.message_id,
+                                    `✅ Approved and Sent:\n\nTo: ${emailDetails.to}\nSubject: ${emailDetails.subject}\n\nStatus: Sent successfully.`
+                                );
 
                                 // Update the draft status
                                 await pool.query(`UPDATE telegram_drafts SET status = 'approved' WHERE id = $1`, [payloadString]);
                                 console.log(`[Telegram Bot] Email approved, sent, and status updated for draft: ${payloadString}`);
                             } catch (err: any) {
                                 console.error(`[Telegram Bot] Error executing email approval:`, err);
-                                await botClient.telegram.api.messages.sendMessage({
-                                    chat_id: chatId,
-                                    text: `❌ Failed to send email: ${err.message}`
-                                });
+                                await sendTelegramMessage(chatId, `❌ Failed to send email: ${err.message}`);
                             }
                         }
 
                         // Handle Reject Action
                         if (action === 'email_reject') {
                             console.log(`[Telegram Bot] Processing email_reject action for draft: ${payloadString}`);
-                            await botClient.telegram.api.messages.editMessageText({
-                                chat_id: chatId,
-                                message_id: callbackQuery.message?.message_id,
-                                text: `❌ *Draft Rejected & Discarded.*`,
-                                parse_mode: 'Markdown'
-                            });
+                            await editTelegramMessage(chatId, callbackQuery.message?.message_id, '❌ Draft Rejected & Discarded.');
                             await pool.query(`UPDATE telegram_drafts SET status = 'rejected' WHERE id = $1`, [payloadString]);
                             console.log(`[Telegram Bot] Email rejected and status updated for draft: ${payloadString}`);
                         }
@@ -572,20 +575,12 @@ Ensure the output is valid JSON.`;
                         // Handle Improve Action
                         if (action === 'email_improve') {
                             console.log(`[Telegram Bot] Processing email_improve action for draft: ${payloadString}`);
-                            try {
-                                await botClient.telegram.api.messages.sendMessage({
-                                    chat_id: chatId,
-                                    text: `✍️ *Please type and send your suggested improvements for this draft email.* I will automatically rewrite it for you.`
-                                });
-                                // Set state to awaiting improvement
-                                await pool.query(
-                                    `UPDATE "user" SET telegram_state = $1 WHERE id = $2`,
-                                    [`awaiting_improvement:${payloadString}`, userId]
-                                );
-                                console.log(`[Telegram Bot] User state updated to awaiting_improvement for draft: ${payloadString}`);
-                            } catch (err: any) {
-                                console.error("Failed to start improvement flow:", err);
-                            }
+                            await sendTelegramMessage(chatId, '✍️ Please type and send your suggested improvements for this draft email. I will automatically rewrite it for you.');
+                            await pool.query(
+                                `UPDATE "user" SET telegram_state = $1 WHERE id = $2`,
+                                [`awaiting_improvement:${payloadString}`, userId]
+                            );
+                            console.log(`[Telegram Bot] User state updated to awaiting_improvement for draft: ${payloadString}`);
                         }
                     }
                 }
