@@ -33,7 +33,7 @@ SuperEA is a real-time, proactive AI Executive Assistant Command Center built us
 - Click on any pending approval card on the dashboard to slide out a side sheet detailing the recipient (`To`), `Subject`, and the complete scrollable `Message Body`.
 - Users can approve, discard, or request improvements directly from the sheet, enforcing signoffs exactly matching:
   ```text
-  Best,
+  Best Regards,
   [User Name]
   ```
 
