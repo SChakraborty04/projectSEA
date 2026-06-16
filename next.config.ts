@@ -12,11 +12,4 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@mastra/core", "@mastra/ai-sdk"]
 }
 
-module.exports = {
-  allowedDevOrigins: [
-    'blunt-venture-doornail.ngrok-free.dev',
-    'superea.app'
-  ]
-}
-
 export default nextConfig
