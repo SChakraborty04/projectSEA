@@ -21,5 +21,14 @@ export const auth = betterAuth({
             enabled: true,
         }
     },
+    advanced: {
+        ipAddress: {
+            ipAddressHeaders: [
+                "x-vercel-forwarded-for",
+                "x-forwarded-for",
+                "x-real-ip"
+            ]
+        }
+    },
     plugins: [nextCookies()]
 });
