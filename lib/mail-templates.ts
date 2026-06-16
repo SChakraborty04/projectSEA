@@ -11,7 +11,7 @@ export function getVerificationEmailHtml(url: string, userName: string): string 
 <body style="margin: 0; padding: 20px; background-color: #FFFDF5; font-family: 'Courier New', Courier, monospace; color: #000000; -webkit-font-smoothing: antialiased;">
   <div style="max-width: 500px; margin: 40px auto; background-color: #ffffff; border: 4px solid #000000; box-shadow: 8px 8px 0px #000000; padding: 24px;">
     <div style="border-bottom: 4px solid #000000; padding-bottom: 12px; margin-bottom: 20px; text-align: center;">
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; font-family: 'Impact', 'Arial Black', sans-serif;">⚡ SUPEREA v1 α</h1>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -1px; font-family: 'Impact', 'Arial Black', sans-serif;">SUPEREA v1 α</h1>
       <p style="margin: 4px 0 0 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #666666; letter-spacing: 1px;">EMAIL VERIFICATION REQUIRED</p>
     </div>
     
@@ -49,7 +49,7 @@ export function getResetPasswordEmailHtml(url: string, userName: string): string
 <body style="margin: 0; padding: 20px; background-color: #FFFDF5; font-family: 'Courier New', Courier, monospace; color: #000000; -webkit-font-smoothing: antialiased;">
   <div style="max-width: 500px; margin: 40px auto; background-color: #ffffff; border: 4px solid #000000; box-shadow: 8px 8px 0px #000000; padding: 24px;">
     <div style="border-bottom: 4px solid #000000; padding-bottom: 12px; margin-bottom: 20px; text-align: center;">
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; font-family: 'Impact', 'Arial Black', sans-serif;">⚡ SUPEREA v1 α</h1>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -1px; font-family: 'Impact', 'Arial Black', sans-serif;">SUPEREA v1 α</h1>
       <p style="margin: 4px 0 0 0; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #666666; letter-spacing: 1px;">PASSWORD RESET REQUESTED</p>
     </div>
     

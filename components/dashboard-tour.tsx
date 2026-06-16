@@ -41,10 +41,10 @@ export function DashboardTour() {
       title: "Welcome to SuperEA ⚡",
       description: "Meet your personal AI executive assistant. We've built an autonomous assistant to handle your emails, schedule meetings, and take voice commands directly in your browser. Let's take a quick 1-minute visual tour!",
       visual: (
-        <div className="flex flex-col items-center justify-center h-48 bg-[#FFD93D] dark:bg-[#db6802] border-4 border-black text-black p-4 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(45deg,#000_25%,transparent_25%,transparent_50%,#000_50%,#000_75%,transparent_75%,transparent)] bg-[length:40px_40px] opacity-10 animate-[pulse_3s_infinite]" />
-          <span className="text-4xl font-black tracking-tighter uppercase mb-2">SUPEREA</span>
-          <span className="text-xs font-bold uppercase bg-black text-white px-2 py-0.5 border border-black">YOUR PERSONAL CO-PILOT</span>
+        <div className="flex flex-col items-center justify-center h-48 bg-[#FFD93D] dark:bg-[#db6802] border-4 border-black text-black p-4 relative overflow-hidden isolate">
+          <div className="absolute inset-0 bg-[linear-gradient(45deg,#000_25%,transparent_25%,transparent_50%,#000_50%,#000_75%,transparent_75%,transparent)] bg-[length:40px_40px] opacity-10 animate-[pulse_3s_infinite] z-0" />
+          <span className="text-4xl font-black tracking-tighter uppercase mb-2 z-20 bg-white">SUPEREA</span>
+          <span className="text-xs font-bold uppercase bg-black text-white px-2 py-0.5 border border-black z-20">YOUR PERSONAL AI ASSISTANT</span>
         </div>
       )
     },

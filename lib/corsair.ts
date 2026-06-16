@@ -398,10 +398,7 @@ export const corsair = createCorsair({
                                     // Fetch draft details
                                     const draftRes = await pool.query(`SELECT * FROM telegram_drafts WHERE id = $1`, [draftId]);
                                     if (draftRes.rows.length === 0) {
-                                        await botClient.telegram.api.messages.sendMessage({
-                                            chat_id: chatId,
-                                            text: "❌ Draft not found."
-                                        });
+                                        await sendTelegramMessage(chatId, "❌ Draft not found.");
                                         return;
                                     }
                                     const draft = draftRes.rows[0];
