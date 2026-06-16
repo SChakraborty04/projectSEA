@@ -26,6 +26,14 @@ import { MoreVerticalCircle01Icon, UserCircle02Icon, CreditCardIcon, Notificatio
 
 import Link from "next/link"
 
+function getInitials(name?: string) {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
 export function NavUser({
   user,
 }: {
@@ -48,7 +56,7 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-none border-2 border-black dark:border-white grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-none">{user.name.charAt(0)+user.name.split(' ')[1]?.charAt(0) || ''}</AvatarFallback>
+                <AvatarFallback className="rounded-none">{getInitials(user.name)}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left leading-tight">
                 <span className="truncate font-black">{user.name}</span>
@@ -69,7 +77,7 @@ export function NavUser({
               <div className="flex items-center gap-2 px-2 py-2 text-left text-sm border-b-2 border-black dark:border-white pb-3">
                 <Avatar className="h-8 w-8 rounded-none border-2 border-black dark:border-white">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-none">{user.name.charAt(0)+user.name.split(' ')[1]?.charAt(0) || ''}</AvatarFallback>
+                  <AvatarFallback className="rounded-none">{getInitials(user.name)}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate font-black uppercase text-xs">{user.name}</span>
