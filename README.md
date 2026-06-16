@@ -62,9 +62,9 @@ SuperEA is a real-time, proactive AI Executive Assistant Command Center built us
 ---
 
 ## ⚡ Corsair Features Used
-- **Gmail Plugin** (`@corsair-dev/gmail`): For syncing messages, listing threads, extracting bodies, and listening to incoming real-time notifications via `messageChanged` hooks.
-- **Google Calendar Plugin** (`@corsair-dev/googlecalendar`): For fetching availability, scheduling events, and updating context via `onEventChanged` hooks.
-- **Telegram Plugin** (`@corsair-dev/telegram`): For interactive bot command-handling and callback query approvals.
+- **Gmail Plugin** (`@corsair-dev/gmail`): For syncing messages, listing threads, extracting bodies, and listening to incoming real-time notifications via `messageChanged` hooks. See [Corsair Gmail Setup Guide](https://docs.corsair.dev/plugins/gmail/overview).
+- **Google Calendar Plugin** (`@corsair-dev/googlecalendar`): For fetching availability, scheduling events, and updating context via `onEventChanged` hooks. See [Corsair Google Calendar Setup Guide](https://docs.corsair.dev/plugins/googlecalendar/overview).
+- **Telegram Plugin** (`@corsair-dev/telegram`): For interactive bot command-handling and callback query approvals. See [Corsair Telegram Setup Guide](https://docs.corsair.dev/plugins/telegram/overview).
 
 ---
 
