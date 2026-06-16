@@ -69,10 +69,12 @@ export async function POST(request: NextRequest) {
         console.log('[Telegram Webhook] Received webhook payload. Headers:', JSON.stringify(headers), 'Body:', JSON.stringify(body));
     }
 
-    // If QStash Token is configured, queue the request. Otherwise fall back to synchronous execution.
-    // We bypass QStash for Telegram webhooks to ensure instant response times and avoid QStash signature verification/delivery issues in production.
+    // Queue ALL webhooks via QStash when configured (Gmail, Telegram, etc.).
+    // Telegram bot replies now use native fetch helpers so there is no need
+    // to process Telegram synchronously — returning 200 OK immediately is
+    // all Telegram requires from the webhook endpoint.
     const qstashToken = process.env.QSTASH_TOKEN;
-    if (qstashToken && !isTelegram) {
+    if (qstashToken) {
         try {
             const qstash = new Client({ token: qstashToken });
             await qstash.publishJSON({
@@ -83,17 +85,15 @@ export async function POST(request: NextRequest) {
                     tenantId,
                 },
             });
-            console.log('[Webhook Queue] Successfully queued webhook request via QStash');
+            console.log(`[Webhook Queue] Queued ${isTelegram ? 'Telegram' : ''} webhook for tenant: ${tenantId}`);
             return NextResponse.json({ success: true, queued: true });
         } catch (err: any) {
             console.error('[Webhook Queue] Failed to queue via QStash, falling back to sync processing:', err);
         }
     }
 
-    // Fallback/Development: Process synchronously if QStash is not configured
-    if (isTelegram) {
-        console.log('[Telegram Webhook] Invoking processWebhook synchronously...');
-    }
+    // Sync fallback: used in local dev where QSTASH_TOKEN is not configured.
+    console.log(`[Webhook Sync] Processing ${isTelegram ? 'Telegram' : ''} webhook synchronously for tenant: ${tenantId}`);
     const result = await processWebhook(corsair, headers, body, { tenantId });
     
     if (isTelegram) {
