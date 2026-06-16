@@ -69,8 +69,8 @@ Ensure the output is valid JSON.`;
 
         // Ensure email signature is preserved
         const userName = session.user?.name || 'User';
-        if (!updatedDetails.body.includes(userName) && !updatedDetails.body.includes('Best,')) {
-            updatedDetails.body += `\n\nBest,\n${userName}`;
+        if (!updatedDetails.body.includes(userName) && !updatedDetails.body.includes('Best Regards,')) {
+            updatedDetails.body += `\n\nBest Regards,\n${userName}`;
         }
 
         // 3. Update database

@@ -384,8 +384,8 @@ Ensure the output is valid JSON.`;
                                     // Ensure signature
                                     const userDetailsRes = await pool.query(`SELECT name FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
                                     const userName = userDetailsRes.rows[0]?.name || 'User';
-                                    if (!updatedDetails.body.includes(userName) && !updatedDetails.body.includes('Best,')) {
-                                        updatedDetails.body += `\n\nBest,\n${userName}`;
+                                    if (!updatedDetails.body.includes(userName) && !updatedDetails.body.includes('Best Regards,')) {
+                                        updatedDetails.body += `\n\nBest Regards,\n${userName}`;
                                     }
 
                                     // Update database
