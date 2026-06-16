@@ -184,6 +184,7 @@ export const corsair = createCorsair({
                             if (!message?.text) return;
                             const text = message.text.trim();
                             const chatId = message.chat.id.toString();
+                            console.log(`[Telegram Bot] Message received. chatId: ${chatId}, text: "${text}"`);
                             const botClient = corsair.withTenant('default'); // The global bot client
 
                             // 1. Handle /start (Onboarding Deep Linking)
@@ -198,6 +199,7 @@ export const corsair = createCorsair({
 
                             // 1.5 Handle Connection Code
                             if (/^\d{6}$/.test(text)) {
+                                console.log(`[Telegram Bot] Validating connection code: ${text} for chatId: ${chatId}`);
                                 // Check if code exists and is valid
                                 const codeRes = await pool.query(
                                     `SELECT id FROM "user" WHERE telegram_connection_code = $1 AND telegram_code_expires_at > NOW() LIMIT 1`,
@@ -205,6 +207,7 @@ export const corsair = createCorsair({
                                 );
                                 if (codeRes.rows.length > 0) {
                                     const userId = codeRes.rows[0].id;
+                                    console.log(`[Telegram Bot] Connection code matched successfully for user: ${userId}`);
                                     await pool.query(
                                         `UPDATE "user" SET telegram_chat_id = $1, telegram_state = 'idle', telegram_connection_code = NULL, telegram_code_expires_at = NULL WHERE id = $2`,
                                         [chatId, userId]
@@ -483,6 +486,7 @@ Ensure the output is valid JSON.`;
                         if (!callbackQuery?.data) return;
                         const [action, payloadString] = callbackQuery.data.split(':');
                         const chatId = callbackQuery.message?.chat.id.toString();
+                        console.log(`[Telegram Bot] Callback query received. chatId: ${chatId}, action: ${action}, payloadString: ${payloadString}`);
                         if (!chatId) return;
 
                         // Identify the user making the query
@@ -490,8 +494,12 @@ Ensure the output is valid JSON.`;
                             `SELECT id FROM "user" WHERE telegram_chat_id = $1 LIMIT 1`,
                             [chatId]
                         );
-                        if (userRes.rows.length === 0) return;
+                        if (userRes.rows.length === 0) {
+                            console.warn(`[Telegram Bot] Callback query warning: No user found with telegram_chat_id: ${chatId}`);
+                            return;
+                        }
                         const userId = userRes.rows[0].id;
+                        console.log(`[Telegram Bot] User found: ${userId}. Initializing clients.`);
 
                         const botClient = corsair.withTenant('default');
                         const userClient = corsair.withTenant(userId);
@@ -503,9 +511,11 @@ Ensure the output is valid JSON.`;
 
                         // Handle Approve Action
                         if (action === 'email_approve') {
+                            console.log(`[Telegram Bot] Processing email_approve action for draft: ${payloadString}`);
                             try {
                                 const draftRes = await pool.query(`SELECT email_details FROM telegram_drafts WHERE id = $1`, [payloadString]);
                                 if (draftRes.rows.length === 0) {
+                                    console.warn(`[Telegram Bot] Approve failed: Draft ${payloadString} not found in database.`);
                                     await botClient.telegram.api.messages.sendMessage({
                                         chat_id: chatId,
                                         text: "❌ Draft not found or already processed."
@@ -536,7 +546,9 @@ Ensure the output is valid JSON.`;
 
                                 // Update the draft status
                                 await pool.query(`UPDATE telegram_drafts SET status = 'approved' WHERE id = $1`, [payloadString]);
+                                console.log(`[Telegram Bot] Email approved, sent, and status updated for draft: ${payloadString}`);
                             } catch (err: any) {
+                                console.error(`[Telegram Bot] Error executing email approval:`, err);
                                 await botClient.telegram.api.messages.sendMessage({
                                     chat_id: chatId,
                                     text: `❌ Failed to send email: ${err.message}`
@@ -546,6 +558,7 @@ Ensure the output is valid JSON.`;
 
                         // Handle Reject Action
                         if (action === 'email_reject') {
+                            console.log(`[Telegram Bot] Processing email_reject action for draft: ${payloadString}`);
                             await botClient.telegram.api.messages.editMessageText({
                                 chat_id: chatId,
                                 message_id: callbackQuery.message?.message_id,
@@ -553,10 +566,12 @@ Ensure the output is valid JSON.`;
                                 parse_mode: 'Markdown'
                             });
                             await pool.query(`UPDATE telegram_drafts SET status = 'rejected' WHERE id = $1`, [payloadString]);
+                            console.log(`[Telegram Bot] Email rejected and status updated for draft: ${payloadString}`);
                         }
 
                         // Handle Improve Action
                         if (action === 'email_improve') {
+                            console.log(`[Telegram Bot] Processing email_improve action for draft: ${payloadString}`);
                             try {
                                 await botClient.telegram.api.messages.sendMessage({
                                     chat_id: chatId,
@@ -567,6 +582,7 @@ Ensure the output is valid JSON.`;
                                     `UPDATE "user" SET telegram_state = $1 WHERE id = $2`,
                                     [`awaiting_improvement:${payloadString}`, userId]
                                 );
+                                console.log(`[Telegram Bot] User state updated to awaiting_improvement for draft: ${payloadString}`);
                             } catch (err: any) {
                                 console.error("Failed to start improvement flow:", err);
                             }

@@ -84,12 +84,13 @@ export function AgentSetupForm({
       }
 
       const data = await res.json();
-      setTelegramStatus(prev => ({
-        ...prev,
+      setTelegramStatus({
+        isConnected: false,
+        chatId: null,
         botUsername: data.botUsername,
         connectionCode: data.connectionCode,
         isSettingUp: false,
-      }));
+      });
       toast.success("Telegram webhook activated!");
     } catch (error) {
       toast.error("Failed to connect Telegram bot. Make sure TELEGRAM_BOT_TOKEN is set on the server.");

@@ -63,7 +63,11 @@ export async function POST(request: NextRequest) {
 
     const isTelegram = tenantId === 'default' || (typeof body === 'object' && body?.update_id);
 
-    console.log('[Webhook Debug] Final tenantId:', tenantId);
+    console.log('[Webhook Debug] Final tenantId:', tenantId, 'isTelegram:', isTelegram);
+
+    if (isTelegram) {
+        console.log('[Telegram Webhook] Received webhook payload. Headers:', JSON.stringify(headers), 'Body:', JSON.stringify(body));
+    }
 
     // If QStash Token is configured, queue the request. Otherwise fall back to synchronous execution.
     // We bypass QStash for Telegram webhooks to ensure instant response times and avoid QStash signature verification/delivery issues in production.
@@ -87,10 +91,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback/Development: Process synchronously if QStash is not configured
+    if (isTelegram) {
+        console.log('[Telegram Webhook] Invoking processWebhook synchronously...');
+    }
     const result = await processWebhook(corsair, headers, body, { tenantId });
-    console.log(result);
+    
+    if (isTelegram) {
+        console.log('[Telegram Webhook] processWebhook result:', JSON.stringify(result));
+    } else {
+        console.log(result);
+    }
 
     if (!result.response) {
+        if (isTelegram) {
+            console.error('[Telegram Webhook] processWebhook did not return a response object');
+        }
         return NextResponse.json({ success: false }, { status: 404 });
     }
 

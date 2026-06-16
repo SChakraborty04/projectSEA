@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
         
         await pool.query(
-            `UPDATE "user" SET telegram_connection_code = $1, telegram_code_expires_at = $2 WHERE id = $3`,
+            `UPDATE "user" SET telegram_connection_code = $1, telegram_code_expires_at = $2, telegram_chat_id = NULL WHERE id = $3`,
             [code, expiresAt, session.user.id]
         );
 
