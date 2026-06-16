@@ -91,13 +91,9 @@ SuperEA is a real-time, proactive AI Executive Assistant Command Center built us
    ```
 
 3. **Configure Environment Variables**:
-   Create a `.env` file in the root with:
-   ```env
-   DATABASE_URL=postgres://...
-   OPENROUTER_API_KEY=sk-or-...
-   PHISHING_DETECTION_API_URL=https://sandipanch04-email-detection.hf.space/analyze
-   NEXT_PUBLIC_VAPI_PUBLIC_KEY=...
-   TELEGRAM_WEBHOOK_SECRET=...
+   Copy the example environment file and fill in your actual credentials (database connection, API keys, and secrets):
+   ```bash
+   cp .env.example .env
    ```
 
 4. **Database Push**:
