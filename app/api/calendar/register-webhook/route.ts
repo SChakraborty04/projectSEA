@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { corsair } from '@/lib/corsair';
+import { getAppUrl } from '@/lib/utils';
 import { getSession } from '@/lib/session';
 import { pool } from '@/db';
 
@@ -77,8 +78,8 @@ export async function POST() {
         // verified in Google Search Console and added to "Domain Verification" in Google Cloud Console.
         try {
             const accessToken = await (client as any).googlecalendar.keys.get_access_token();
-            if (accessToken && process.env.APP_URL) {
-                const webhookUrl = `${process.env.APP_URL}/api/webhooks?tenantId=${session.user.id}`;
+            if (accessToken) {
+                const webhookUrl = `${getAppUrl()}/api/webhooks?tenantId=${session.user.id}`;
                 const channelId = crypto.randomUUID();
                 
                 const watchRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/watch', {

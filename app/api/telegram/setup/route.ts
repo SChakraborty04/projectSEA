@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { pool } from '@/db/index';
 import { corsair } from '@/lib/corsair';
+import { getAppUrl } from '@/lib/utils';
 
 export async function POST(req: Request) {
     const session = await getSession();
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
         // 3. Register the single static webhook with Telegram via Corsair client (using default tenant)
         const client = corsair.withTenant('default');
         await client.telegram.api.webhook.setWebhook({
-            url: `${process.env.APP_URL}/api/webhooks`,
+            url: `${getAppUrl()}/api/webhooks`,
             secret_token: process.env.TELEGRAM_WEBHOOK_SECRET || 'superea_telegram_secret'
         });
 

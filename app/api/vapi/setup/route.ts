@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { agentProfiles } from '@/db/schema/agent';
 import { user } from '@/db/schema/auth';
 import { eq } from 'drizzle-orm';
+import { getAppUrl } from '@/lib/utils';
 
 export async function POST(req: Request) {
     const session = await getSession();
@@ -98,7 +99,7 @@ export async function POST(req: Request) {
                 : body.agentVoice
         },
         // Point Vapi back to your server for tool execution (we will pass tenantId in the query)
-        serverUrl: `${process.env.APP_URL}/api/vapi/webhook?tenantId=${tenantId}`,
+        serverUrl: `${getAppUrl()}/api/vapi/webhook?tenantId=${tenantId}`,
     };
 
     // 3. Send to Vapi (Bypassed in alpha - using local Mastra / Cartesia voice loop)

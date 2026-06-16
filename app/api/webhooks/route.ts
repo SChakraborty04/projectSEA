@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { corsair } from '@/lib/corsair';
 import { pool } from '@/db/index';
 import { Client } from "@upstash/qstash";
+import { getAppUrl } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
     const headers: Record<string, string> = {};
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
         try {
             const qstash = new Client({ token: qstashToken });
             await qstash.publishJSON({
-                url: `${process.env.APP_URL}/api/webhooks/worker`,
+                url: `${getAppUrl()}/api/webhooks/worker`,
                 body: {
                     headers,
                     body,

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { corsairAccounts } from '@/db/schema/corsair';
 import { corsair } from '@/lib/corsair';
+import { getAppUrl } from '@/lib/utils';
 
 export async function POST(req: Request) {
     // 1. Verify authorization header
@@ -55,8 +56,8 @@ export async function POST(req: Request) {
             // Calendar renewal
             try {
                 const calendarToken = await (client as any).googlecalendar?.keys?.get_access_token().catch(() => null);
-                if (calendarToken && process.env.APP_URL) {
-                    const webhookUrl = `${process.env.APP_URL}/api/webhooks?tenantId=${tenantId}`;
+                if (calendarToken) {
+                    const webhookUrl = `${getAppUrl()}/api/webhooks?tenantId=${tenantId}`;
                     const channelId = crypto.randomUUID();
                     
                     const watchRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/watch', {
