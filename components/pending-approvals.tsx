@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, X, Mail, CheckCircle2, XCircle, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface Draft {
     id: string;
@@ -18,12 +19,46 @@ interface Draft {
 }
 
 export function PendingApprovals() {
+    return (
+        <Suspense fallback={<div className="text-sm font-bold uppercase tracking-wider text-black/60 dark:text-white/60">Loading email approvals...</div>}>
+            <PendingApprovalsContent />
+        </Suspense>
+    );
+}
+
+function PendingApprovalsContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const draftIdParam = searchParams.get("draft");
+
     const [drafts, setDrafts] = useState<Draft[]>([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
     const [improvementText, setImprovementText] = useState("");
     const [isImproving, setIsImproving] = useState(false);
+
+    // Read the query parameter to auto-select draft
+    useEffect(() => {
+        if (draftIdParam && drafts.length > 0) {
+            const found = drafts.find(d => d.id === draftIdParam);
+            if (found) {
+                setSelectedDraft(found);
+            }
+        }
+    }, [draftIdParam, drafts]);
+
+    const handleClose = () => {
+        setSelectedDraft(null);
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has("draft")) {
+                params.delete("draft");
+                const newSearch = params.toString();
+                router.push(`${window.location.pathname}${newSearch ? "?" + newSearch : ""}`, { scroll: false });
+            }
+        }
+    };
 
     const fetchDrafts = async () => {
         try {
@@ -215,7 +250,7 @@ export function PendingApprovals() {
                 } catch (e) { }
 
                 return (
-                    <Sheet open={selectedDraft !== null} onOpenChange={(open) => { if (!open) setSelectedDraft(null); }}>
+                    <Sheet open={selectedDraft !== null} onOpenChange={(open) => { if (!open) handleClose(); }}>
                         <SheetContent className="sm:max-w-md md:max-w-lg flex flex-col h-full bg-[#FFFDF5] dark:bg-[#121214] border-l-4 border-black dark:border-white shadow-2xl p-0 rounded-none">
                             <SheetHeader className="border-b-4 border-black dark:border-white p-6 bg-white dark:bg-[#1C1C1F]">
                                 <SheetTitle className="text-lg font-black uppercase tracking-wider text-black dark:text-white flex items-center gap-2">
@@ -282,7 +317,7 @@ export function PendingApprovals() {
                                         disabled={processingId === selectedDraft.id}
                                         onClick={async () => {
                                             await handleAction(selectedDraft.id, 'reject');
-                                            setSelectedDraft(null);
+                                            handleClose();
                                         }}
                                     >
                                         <X className="mr-2 h-4 w-4" />
@@ -294,7 +329,7 @@ export function PendingApprovals() {
                                         disabled={processingId === selectedDraft.id}
                                         onClick={async () => {
                                             await handleAction(selectedDraft.id, 'approve');
-                                            setSelectedDraft(null);
+                                            handleClose();
                                         }}
                                     >
                                         <Check className="mr-2 h-4 w-4" />

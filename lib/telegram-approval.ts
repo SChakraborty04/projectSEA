@@ -12,13 +12,6 @@ export async function requestEmailApproval(
         [tenantId]
     );
     const chatId = userRes.rows[0]?.telegram_chat_id;
-    if (!chatId) {
-        console.warn(`User ${tenantId} does not have a linked Telegram account.`);
-        return { success: false, error: 'User does not have a linked Telegram account.' };
-    }
-
-    // The bot is globally registered under the 'default' tenant
-    const botClient = corsair.withTenant('default');
 
     // 2. Generate draft ID and save to telegram_drafts instead of base64 (which hits Telegram's 64 byte limit)
     const draftId = crypto.randomUUID();
@@ -27,31 +20,43 @@ export async function requestEmailApproval(
         [draftId, tenantId, JSON.stringify(emailDetails)]
     );
 
-    // 3. Send message with Approval Buttons (using snake_case parameters required by Corsair Telegram plugin)
-    const msg: any = await botClient.telegram.api.messages.sendMessage({
-        chat_id: chatId,
-        text: `✉️ *Draft Email Awaiting Approval:*\n\n*To:* ${emailDetails.to}\n*Subject:* ${emailDetails.subject}\n\n*Body:*\n${emailDetails.body}\n\nDo you want to send this email?`,
-        parse_mode: 'Markdown',
-        reply_markup: {
-            inline_keyboard: [
-                [
-                    { text: "✅ Approve & Send", callback_data: `email_approve:${draftId}` },
-                    { text: "❌ Discard", callback_data: `email_reject:${draftId}` }
-                ],
-                [
-                    { text: "✍️ Suggest Improvement", callback_data: `email_improve:${draftId}` }
-                ]
-            ]
-        }
-    });
-
-    const messageId = msg?.message_id || msg?.result?.message_id;
-    if (messageId) {
-        await pool.query(
-            `UPDATE telegram_drafts SET telegram_message_id = $1, telegram_chat_id = $2 WHERE id = $3`,
-            [messageId.toString(), chatId.toString(), draftId]
-        );
+    if (!chatId) {
+        console.warn(`User ${tenantId} does not have a linked Telegram account. Draft saved to dashboard as pending.`);
+        return { success: true, draftId };
     }
 
-    return { success: true };
+    // The bot is globally registered under the 'default' tenant
+    const botClient = corsair.withTenant('default');
+
+    // 3. Send message with Approval Buttons (using snake_case parameters required by Corsair Telegram plugin)
+    try {
+        const msg: any = await botClient.telegram.api.messages.sendMessage({
+            chat_id: chatId,
+            text: `✉️ *Draft Email Awaiting Approval:*\n\n*To:* ${emailDetails.to}\n*Subject:* ${emailDetails.subject}\n\n*Body:*\n${emailDetails.body}\n\nDo you want to send this email?`,
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: "✅ Approve & Send", callback_data: `email_approve:${draftId}` },
+                        { text: "❌ Discard", callback_data: `email_reject:${draftId}` }
+                    ],
+                    [
+                        { text: "✍️ Suggest Improvement", callback_data: `email_improve:${draftId}` }
+                    ]
+                ]
+            }
+        });
+
+        const messageId = msg?.message_id || msg?.result?.message_id;
+        if (messageId) {
+            await pool.query(
+                `UPDATE telegram_drafts SET telegram_message_id = $1, telegram_chat_id = $2 WHERE id = $3`,
+                [messageId.toString(), chatId.toString(), draftId]
+            );
+        }
+    } catch (err) {
+        console.error(`Failed to send Telegram notification to chat ${chatId} for draft ${draftId}:`, err);
+    }
+
+    return { success: true, draftId };
 }
