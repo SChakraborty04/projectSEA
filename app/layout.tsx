@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "SuperEA — Autonomous AI Executive Assistant",
   description: "Your Inbox, Calendar, and Tasks managed by an autonomous AI copilot. Built for speed, security, and zero-click productivity.",
   icons: {
-    icon: "/icon.svg"
+    icon: "/favicon.ico"
   }
 }
 
