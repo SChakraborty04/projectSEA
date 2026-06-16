@@ -2,6 +2,8 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db"; // your drizzle instance
 import { nextCookies } from "better-auth/next-js";
+import { sendEmail } from "@/lib/mail";
+import { getVerificationEmailHtml, getResetPasswordEmailHtml } from "@/lib/mail-templates";
 
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
@@ -9,7 +11,25 @@ export const auth = betterAuth({
     }),
     emailAndPassword: { 
         enabled: true, 
+        requireEmailVerification: true,
+        sendResetPassword: async ({ user, url, token }) => {
+            await sendEmail({
+                to: user.email,
+                subject: "Reset your SuperEA password",
+                html: getResetPasswordEmailHtml(url, user.name)
+            });
+        }
     }, 
+    emailVerification: {
+        sendOnSignUp: true,
+        sendVerificationEmail: async ({ user, url, token }) => {
+            await sendEmail({
+                to: user.email,
+                subject: "Verify your SuperEA email address",
+                html: getVerificationEmailHtml(url, user.name)
+            });
+        }
+    },
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID || "",

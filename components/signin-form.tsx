@@ -41,6 +41,9 @@ export function SigninForm({
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
+  const [view, setView] = useState<'signin' | 'forgot-password'>('signin')
+  const [forgotEmail, setForgotEmail] = useState("")
+  const [forgotLoading, setForgotLoading] = useState(false)
   const router = useRouter()
   
   const handleGoogleSignIn = async () => {
@@ -93,6 +96,74 @@ export function SigninForm({
     } finally {
       setLoading(false)
     }
+  }
+
+  if (view === 'forgot-password') {
+    return (
+      <div className={cn("flex flex-col gap-4", className)} {...props}>
+        <Card className="border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] rounded-none bg-white dark:bg-[#1C1C1F] overflow-hidden">
+          <CardHeader className="text-center border-b-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#121214] py-5">
+            <CardTitle className="text-2xl font-black uppercase tracking-tighter text-black dark:text-white">Reset Password</CardTitle>
+            <CardDescription className="text-xs font-bold uppercase tracking-wider text-black/60 dark:text-white/60 mt-1">
+              Enter your email to receive a reset link
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!forgotEmail) {
+                toast.error("Please enter your email");
+                return;
+              }
+              try {
+                setForgotLoading(true);
+                const result = await authClient.requestPasswordReset({
+                  email: forgotEmail,
+                  redirectTo: "/reset-password",
+                });
+                if (result.error) {
+                  toast.error(result.error.message || "Failed to send reset link");
+                } else {
+                  toast.success("Password reset email sent! Check your inbox.");
+                  setView('signin');
+                }
+              } catch {
+                toast.error("An error occurred. Please try again.");
+              } finally {
+                setForgotLoading(false);
+              }
+            }}>
+              <FieldGroup className="space-y-4">
+                <Field className="space-y-0.5">
+                  <FieldLabel htmlFor="forgot-email" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Email Address</FieldLabel>
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    placeholder="YOUR EMAIL"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="border-4 border-black dark:border-white focus-visible:ring-0 focus-visible:bg-[#FFD93D] dark:focus-visible:bg-[#db6802] focus-visible:text-black rounded-none px-3 py-3 font-bold text-black dark:text-white bg-white dark:bg-[#121214] focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30 uppercase text-xs tracking-wider"
+                  />
+                </Field>
+                <Field className="space-y-3 pt-2">
+                  <Button type="submit" disabled={forgotLoading} className="w-full bg-[#FFD93D] dark:bg-[#db6802] text-black border-4 border-black dark:border-white py-4 text-sm font-black uppercase tracking-wider hover:bg-[#ffbe25] hover:text-black rounded-none shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] transition-colors flex items-center justify-center">
+                    {forgotLoading ? "Sending Link..." : "Send Reset Link"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setView('signin')}
+                    className="w-full border-4 border-black dark:border-white rounded-none font-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:bg-[#FFFDF5] dark:hover:bg-[#121214] uppercase text-xs py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] dark:hover:shadow-[2px_2px_0px_0px_#fff] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-black dark:text-white cursor-pointer"
+                  >
+                    Back to Sign In
+                  </Button>
+                </Field>
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -160,6 +231,10 @@ export function SigninForm({
                       <FieldLabel htmlFor="password" className="font-black uppercase tracking-wider text-[10px] text-black dark:text-white">Password</FieldLabel>
                       <a
                         href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setView('forgot-password');
+                        }}
                         className="ml-auto text-[9px] font-black uppercase text-black/60 dark:text-white/60 hover:text-[#FF6B6B] dark:hover:text-[#FFD93D] transition-colors"
                       >
                         Forgot password?

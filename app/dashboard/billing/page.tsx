@@ -3,13 +3,37 @@
 import * as React from "react"
 import { CreditCard, Sparkles, Check, Hourglass, ShieldCheck, AlertTriangle, Lock } from "lucide-react"
 import { toast } from "sonner"
+import { authClient } from "@/lib/auth-client"
 
 export default function BillingPage() {
+  const { data: session } = authClient.useSession()
   const [joinedWaitlist, setJoinedWaitlist] = React.useState(false)
 
-  const handleJoinWaitlist = () => {
-    setJoinedWaitlist(true)
-    toast.success("Successfully joined the Beta Waitlist! We will notify you when subscription plans go live.")
+  const handleJoinWaitlist = async () => {
+    const email = session?.user?.email
+    if (!email) {
+      toast.error("Failed to retrieve user email. Please try again.")
+      return
+    }
+
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+
+      if (res.ok) {
+        setJoinedWaitlist(true)
+        toast.success("Successfully joined the Beta Waitlist! We will notify you when subscription plans go live.")
+      } else {
+        const data = await res.json()
+        toast.error(data.error || "Failed to join waitlist.")
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("An error occurred. Please try again.")
+    }
   }
 
   const plans = [

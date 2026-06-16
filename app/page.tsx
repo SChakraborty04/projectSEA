@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -1987,11 +1988,27 @@ export default function Home() {
                           </div>
                         ) : (
                           <form
-                            onSubmit={(e) => {
+                            onSubmit={async (e) => {
                               e.preventDefault();
                               if (!pricingWaitlistEmail.trim()) return;
-                              setPricingWaitlistSubmitted(true);
-                              setShowWaitlistNotice(true);
+                              try {
+                                const res = await fetch("/api/waitlist", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ email: pricingWaitlistEmail.trim() }),
+                                });
+                                if (res.ok) {
+                                  setPricingWaitlistSubmitted(true);
+                                  setShowWaitlistNotice(true);
+                                  toast.success("Successfully joined the Waitlist!");
+                                } else {
+                                  const data = await res.json();
+                                  toast.error(data.error || "Failed to join waitlist.");
+                                }
+                              } catch (err) {
+                                console.error(err);
+                                toast.error("Failed to join waitlist. Please try again.");
+                              }
                             }}
                             className="flex flex-col gap-3"
                           >

@@ -53,6 +53,7 @@ export function SignupForm({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [isVerificationSent, setIsVerificationSent] = useState(false);
   const router = useRouter();
 
   const handleGoogleSignUp = async () => {
@@ -98,7 +99,8 @@ export function SignupForm({
       setLoading(true);
       const result = await signup(data);
       if (result.success) {
-        handleRedirect();
+        setIsVerificationSent(true);
+        toast.success("Account created! Verification email sent.");
       } else {
         toast.error(result.error);
       }
@@ -108,6 +110,32 @@ export function SignupForm({
       setLoading(false);
     }
   }
+  if (isVerificationSent) {
+    return (
+      <div className={cn("flex flex-col gap-4", className)} {...props}>
+        <Card className="border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] rounded-none bg-white dark:bg-[#1C1C1F] overflow-hidden">
+          <CardHeader className="text-center border-b-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#121214] py-5">
+            <CardTitle className="text-2xl font-black uppercase tracking-tighter text-black dark:text-white">Verify Your Email</CardTitle>
+            <CardDescription className="text-xs font-bold uppercase tracking-wider text-black/60 dark:text-white/60 mt-1">
+              Please check your inbox
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 text-center space-y-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-black/80 dark:text-white/80">
+              We have sent a verification link to your email address. Please follow the link in the email to activate your account.
+            </p>
+            <Button
+              onClick={() => router.push("/signin")}
+              className="w-full bg-[#FFD93D] dark:bg-[#db6802] text-black border-4 border-black dark:border-white py-4 text-sm font-black uppercase tracking-wider hover:bg-[#ffbe25] hover:text-black rounded-none shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] transition-colors"
+            >
+              Go to Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col gap-4", className)} {...props}>
       <Card className="border-4 border-black dark:border-white shadow-[8px_8px_0px_0px_#000] dark:shadow-[8px_8px_0px_0px_#fff] rounded-none bg-white dark:bg-[#1C1C1F] overflow-hidden">
