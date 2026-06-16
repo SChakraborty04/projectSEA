@@ -447,11 +447,12 @@ export default function CalendarPage() {
                         <div className="mt-3 flex items-center gap-2">
                           <Button
                             size="sm"
+                            disabled={isCompleted}
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleCompleteEvent(String(event.id));
                             }}
-                            className={`border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none font-black uppercase text-[9px] transition-all duration-75 h-7 px-2.5 rounded-none flex items-center gap-1 ${
+                            className={`border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none font-black uppercase text-[9px] transition-all duration-75 h-7 px-2.5 rounded-none flex items-center gap-1 disabled:opacity-75 disabled:translate-none disabled:shadow-none ${
                               isCompleted
                                 ? 'bg-[#86EFAC] text-black border-black'
                                 : 'bg-white dark:bg-[#121214] text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5'
@@ -463,11 +464,12 @@ export default function CalendarPage() {
 
                           <Button
                             size="sm"
+                            disabled={isCompleted}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenAiForEvent(event);
                             }}
-                            className="bg-[#FFD93D] hover:bg-[#ffbe25] text-black border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none font-black uppercase text-[9px] transition-all duration-75 h-7 px-2.5 rounded-none flex items-center gap-1"
+                            className="bg-[#FFD93D] hover:bg-[#ffbe25] text-black border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none font-black uppercase text-[9px] transition-all duration-75 h-7 px-2.5 rounded-none flex items-center gap-1 disabled:opacity-50 disabled:translate-none disabled:shadow-none"
                           >
                             <Sparkles className="h-3.5 w-3.5 text-black" />
                             Ask AI

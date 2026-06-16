@@ -8,6 +8,7 @@ import { agentProfiles } from "@/db/schema/agent"
 import { eq } from "drizzle-orm"
 import { VapiProvider } from "@/components/vapi-provider"
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts"
+import { DashboardTour } from "@/components/dashboard-tour"
 
 export default async function DashboardLayout({
   children,
@@ -108,6 +109,7 @@ export default async function DashboardLayout({
           }
         >
           <KeyboardShortcuts />
+          <DashboardTour />
           <AppSidebar variant="inset" />
           <SidebarInset>
             <SiteHeader />

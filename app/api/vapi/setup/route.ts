@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const fullName = userRecord.length > 0 ? userRecord[0].name : session.user.name;
 
     // 1. Compile all database parameters into a highly descriptive Vapi System Prompt
-    const systemPrompt = `You are ${body.agentName}, the personal AI scheduler for ${fullName}, who is the ${body.designation} at ${body.companyName}.
+    const systemPrompt = `You are ${body.agentName}, speaking directly to ${fullName}, who is the ${body.designation} at ${body.companyName}.
     - Company: ${body.companyName}
     - Designation/Title: ${body.designation}
     - Business Description: ${body.businessDescription}
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     - Buffer Time: Keep a ${body.bufferMinutes}-minute gap between meetings.
     - Specific Instructions: ${body.customInstructions}
 
-    Politely assist callers, check availability, and schedule meetings on my Google Calendar.
+    Be professional, direct, and act like a personal assistant speaking to ${fullName} in-browser (always address them by their name, ${fullName}). Politely check availability, draft messages, and schedule meetings on their Google Calendar.
     CRITICAL: Once the user's booking/scheduling request is successfully completed, or if the conversation has naturally finished (e.g. they say goodbye or thanks), say a polite closing statement and immediately call the endCall tool to hang up and call off the call.`;
 
     // 2. Prepare payload for Vapi
@@ -101,40 +101,8 @@ export async function POST(req: Request) {
         serverUrl: `${process.env.APP_URL}/api/vapi/webhook?tenantId=${tenantId}`,
     };
 
-    // 3. Send to Vapi
-    const headers = {
-        'Authorization': `Bearer ${process.env.VAPI_PRIVATE_API_KEY}`,
-        'Content-Type': 'application/json'
-    };
-
-    let assistantId = body.vapiAssistantId;
-    
-    if (assistantId) {
-        // Update existing assistant
-        const res = await fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
-            method: 'PATCH',
-            headers,
-            body: JSON.stringify(vapiPayload)
-        });
-        if (!res.ok) {
-            const errorData = await res.json();
-            console.error("Vapi PATCH error:", errorData);
-            return NextResponse.json({ error: 'Failed to update assistant on Vapi' }, { status: 500 });
-        }
-    } else {
-        // Create new assistant
-        const res = await fetch('https://api.vapi.ai/assistant', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(vapiPayload)
-        });
-        const data = await res.json();
-        if (!res.ok || !data.id) {
-            console.error("Vapi POST error:", data);
-            return NextResponse.json({ error: 'Failed to create assistant on Vapi' }, { status: 500 });
-        }
-        assistantId = data.id;
-    }
+    // 3. Send to Vapi (Bypassed in alpha - using local Mastra / Cartesia voice loop)
+    let assistantId = "custom-mastra-voice";
 
     // 4. Save/Update your local DB
     // Remove vapiAssistantId from body so it doesn't overwrite our new assistantId

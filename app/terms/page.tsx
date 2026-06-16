@@ -137,6 +137,15 @@ export default function TermsAndConditions() {
                   We reserve the right to suspend or terminate your access to the Service at any time, with or without cause, including but not limited to the breach of these Terms.
                 </p>
               </section>
+
+              <section className="space-y-3">
+                <h2 className="text-lg font-black uppercase tracking-wider border-b-2 border-dashed border-black/30 dark:border-white/30 pb-1">
+                  6. Contact & Support
+                </h2>
+                <p>
+                  If you have any questions or feedback regarding these Terms, please contact us at <a href="mailto:hello@sandipan.ch" className="underline font-bold">hello@sandipan.ch</a>.
+                </p>
+              </section>
             </div>
 
             {/* Footer Notice */}
@@ -186,6 +195,12 @@ export default function TermsAndConditions() {
                 className="text-sm font-bold uppercase tracking-wide text-white border-4 border-transparent hover:border-white hover:bg-[#FFD93D] hover:text-black px-3 py-1.5 transition-all duration-100"
               >
                 Docs
+              </a>
+              <a
+                href="mailto:hello@sandipan.ch"
+                className="text-sm font-bold uppercase tracking-wide text-white border-4 border-transparent hover:border-white hover:bg-[#86EFAC] hover:text-black px-3 py-1.5 transition-all duration-100"
+              >
+                Contact
               </a>
             </div>
           </div>

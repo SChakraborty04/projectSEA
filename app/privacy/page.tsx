@@ -144,7 +144,16 @@ export default function PrivacyPolicy() {
                   5. Your Rights and Access
                 </h2>
                 <p>
-                  You have full control over your data. You may request the export or complete deletion of your account and integration histories by contacting support, or directly disconnecting services in your agent setup panel.
+                  You have full control over your data. You may request the export or complete deletion of your account and integration histories by contacting support at <a href="mailto:hello@sandipan.ch" className="underline font-bold">hello@sandipan.ch</a>, or directly disconnecting services in your agent setup panel.
+                </p>
+              </section>
+
+              <section className="space-y-3">
+                <h2 className="text-lg font-black uppercase tracking-wider border-b-2 border-dashed border-black/30 dark:border-white/30 pb-1">
+                  6. Contact & Support
+                </h2>
+                <p>
+                  If you have any questions or concerns regarding our privacy practices, please reach out to us at <a href="mailto:hello@sandipan.ch" className="underline font-bold">hello@sandipan.ch</a>.
                 </p>
               </section>
             </div>
@@ -196,6 +205,12 @@ export default function PrivacyPolicy() {
                 className="text-sm font-bold uppercase tracking-wide text-white border-4 border-transparent hover:border-white hover:bg-[#FFD93D] hover:text-black px-3 py-1.5 transition-all duration-100"
               >
                 Docs
+              </a>
+              <a
+                href="mailto:hello@sandipan.ch"
+                className="text-sm font-bold uppercase tracking-wide text-white border-4 border-transparent hover:border-white hover:bg-[#86EFAC] hover:text-black px-3 py-1.5 transition-all duration-100"
+              >
+                Contact
               </a>
             </div>
           </div>

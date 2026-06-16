@@ -24,6 +24,8 @@ import { logout } from "@/actions/logout"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { MoreVerticalCircle01Icon, UserCircle02Icon, CreditCardIcon, Notification03Icon, Logout01Icon } from "@hugeicons/core-free-icons"
 
+import Link from "next/link"
+
 export function NavUser({
   user,
 }: {
@@ -79,13 +81,17 @@ export function NavUser({
             </DropdownMenuLabel>
             <div className="h-1 bg-black dark:bg-white my-1" />
             <DropdownMenuGroup className="space-y-1">
-              <DropdownMenuItem className="hover:bg-[#FFD93D] dark:hover:bg-[#db6802] hover:text-black dark:hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
-                <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} className="size-4" />
-                Account
+              <DropdownMenuItem asChild className="hover:bg-[#FFD93D] dark:hover:bg-[#db6802] hover:text-black dark:hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
+                <Link href="/dashboard/account" className="flex items-center gap-2 w-full">
+                  <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} className="size-4" />
+                  Account
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="hover:bg-[#FFD93D] dark:hover:bg-[#db6802] hover:text-black dark:hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
-                <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />
-                Billing
+              <DropdownMenuItem asChild className="hover:bg-[#FFD93D] dark:hover:bg-[#db6802] hover:text-black dark:hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
+                <Link href="/dashboard/billing" className="flex items-center gap-2 w-full">
+                  <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} className="size-4" />
+                  Billing
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="hover:bg-[#FFD93D] dark:hover:bg-[#db6802] hover:text-black dark:hover:text-white rounded-none cursor-pointer font-bold uppercase tracking-wider text-[10px] p-2.5 flex items-center gap-2 transition-all">
                 <HugeiconsIcon icon={Notification03Icon} strokeWidth={2} className="size-4" />

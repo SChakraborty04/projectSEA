@@ -27,6 +27,7 @@ import Link from "next/link"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { signin } from "@/actions/signin"
+import { authClient } from "@/lib/auth-client"
 
 const formSchema = z.object({
   email: z.email("Invalid Email address"),
@@ -41,6 +42,20 @@ export function SigninForm({
   const [showPassword, setShowPassword] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
   const router = useRouter()
+  
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true)
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      })
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sign in with Google")
+    } finally {
+      setLoading(false)
+    }
+  }
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -86,30 +101,26 @@ export function SigninForm({
         <CardHeader className="text-center border-b-4 border-black dark:border-white bg-[#FFFDF5] dark:bg-[#121214] py-5">
           <CardTitle className="text-2xl font-black uppercase tracking-tighter text-black dark:text-white">Welcome back</CardTitle>
           <CardDescription className="text-xs font-bold uppercase tracking-wider text-black/60 dark:text-white/60 mt-1">
-            Signin with Apple or Google account
+            Signin with Google account
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup className="space-y-4">
-              <Field className="grid grid-cols-2 gap-3">
-                <Button variant="outline" type="button" className="border-4 border-black dark:border-white rounded-none font-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:bg-[#FFFDF5] dark:hover:bg-[#121214] uppercase text-xs flex gap-2 justify-center py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] dark:hover:shadow-[2px_2px_0px_0px_#fff] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-black dark:text-white">
-                  <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  Apple
-                </Button>
-                <Button variant="outline" type="button" className="border-4 border-black dark:border-white rounded-none font-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:bg-[#FFFDF5] dark:hover:bg-[#121214] uppercase text-xs flex gap-2 justify-center py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] dark:hover:shadow-[2px_2px_0px_0px_#fff] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-black dark:text-white">
+              <Field>
+                <Button 
+                  variant="outline" 
+                  type="button" 
+                  onClick={handleGoogleSignIn}
+                  className="w-full border-4 border-black dark:border-white rounded-none font-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:bg-[#FFFDF5] dark:hover:bg-[#121214] uppercase text-xs flex gap-2 justify-center py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] dark:hover:shadow-[2px_2px_0px_0px_#fff] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-black dark:text-white cursor-pointer"
+                >
                   <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
                       d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
                       fill="currentColor"
                     />
                   </svg>
-                  Google
+                  Sign in with Google
                 </Button>
               </Field>
               

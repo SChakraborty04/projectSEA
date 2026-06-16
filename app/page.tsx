@@ -57,6 +57,7 @@ export default function Home() {
   const [pricingWaitlistShowForm, setPricingWaitlistShowForm] = useState(false);
   const [pricingWaitlistSubmitted, setPricingWaitlistSubmitted] = useState(false);
   const [showWaitlistNotice, setShowWaitlistNotice] = useState(false);
+  const [blockState, setBlockState] = useState<"idle" | "breaking" | "done">("idle");
 
   const stepsList = [
     "> Event received: Gmail webhook",
@@ -1214,9 +1215,78 @@ export default function Home() {
                   <span className="block">Your Inbox,</span>
                   <span className="block mt-1">
                     <span className="text-stroke">Calendar</span>
-                    <span className="inline-block bg-[#FF6B6B] border-4 border-black px-4 py-1 shadow-[6px_6px_0px_0px_#000] ml-3 rotate-1">
-                      & AI
+                    <span className="relative inline-block ml-3 align-middle">
+                      {blockState === "idle" && (
+                        <button
+                          onClick={() => setBlockState("breaking")}
+                          className="inline-flex flex-col items-center justify-center align-middle bg-[#FF6B6B] text-black border-4 border-black px-4 pt-2 pb-1.5 shadow-[6px_6px_0px_0px_#000] rotate-1 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[5px_5px_0px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-75 cursor-pointer select-none font-black leading-none"
+                        >
+                          <span className="leading-none">& AI</span>
+                        </button>
+                      )}
+
+                      {blockState === "breaking" && (
+                        <span className="relative inline-flex align-middle">
+                          {/* Hidden spacer block */}
+                          <span className="inline-flex flex-col items-center justify-center opacity-0 border-4 border-transparent px-4 pt-2 pb-1.5 select-none font-black leading-none">
+                            <span className="leading-none">& AI</span>
+                            <span className="mt-1 px-1.5 py-0.5 text-[9px] sm:text-[10px] whitespace-nowrap leading-none">
+                              CLICK HERE
+                            </span>
+                          </span>
+
+                          {/* Left cracked falling piece */}
+                          <motion.span
+                            initial={{ x: 0, y: 0, rotate: 1, opacity: 1 }}
+                            animate={{ x: -120, y: 500, rotate: -65, opacity: 0 }}
+                            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+                            style={{ clipPath: "polygon(0% 0%, 55% 0%, 45% 40%, 55% 70%, 45% 100%, 0% 100%)" }}
+                            className="absolute inset-0 inline-flex flex-col items-center justify-center bg-[#FF6B6B] text-black border-4 border-black px-4 pt-2 pb-1.5 shadow-[6px_6px_0px_0px_#000] pointer-events-none select-none font-black leading-none"
+                          >
+                            <span className="leading-none">& AI</span>
+                            <span className="mt-1 px-1.5 py-0.5 bg-black text-white text-[9px] sm:text-[10px] font-mono font-black tracking-widest uppercase border border-black shadow-[1px_1px_0px_0px_rgba(255,255,255,0.3)] select-none whitespace-nowrap leading-none">
+                              CLICK HERE
+                            </span>
+                          </motion.span>
+
+                          {/* Right cracked falling piece */}
+                          <motion.span
+                            initial={{ x: 0, y: 0, rotate: 1, opacity: 1 }}
+                            animate={{ x: 120, y: 500, rotate: 65, opacity: 0 }}
+                            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+                            style={{ clipPath: "polygon(55% 0%, 100% 0%, 100% 100%, 45% 100%, 55% 70%, 45% 40%)" }}
+                            className="absolute inset-0 inline-flex flex-col items-center justify-center bg-[#FF6B6B] text-black border-4 border-black px-4 pt-2 pb-1.5 shadow-[6px_6px_0px_0px_#000] pointer-events-none select-none font-black leading-none"
+                          >
+                            <span className="leading-none">& AI</span>
+                            <span className="mt-1 px-1.5 py-0.5 bg-black text-white text-[9px] sm:text-[10px] font-mono font-black tracking-widest uppercase border border-black shadow-[1px_1px_0px_0px_rgba(255,255,255,0.3)] select-none whitespace-nowrap leading-none">
+                              CLICK HERE
+                            </span>
+                          </motion.span>
+
+                          {/* Rising spring & SEA replacement block */}
+                          <motion.span
+                            initial={{ scale: 0, opacity: 0, rotate: -10 }}
+                            animate={{ scale: 1, opacity: 1, rotate: -1 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.15 }}
+                            onAnimationComplete={() => setBlockState("done")}
+                            className="absolute inset-0 flex items-center justify-center bg-[#FFD93D] text-black border-4 border-black px-4 py-1 shadow-[6px_6px_0px_0px_#000] rotate-[-1deg] select-none font-black"
+                          >
+                            & SEA
+                          </motion.span>
+                        </span>
+                      )}
+
+                      {blockState === "done" && (
+                        <button
+                          onClick={() => setBlockState("idle")}
+                          className="inline-block bg-[#FFD93D] text-black border-4 border-black px-4 py-1 shadow-[6px_6px_0px_0px_#000] rotate-[-1deg] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[5px_5px_0px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-75 cursor-pointer select-none font-black align-middle"
+                          title="Click to reset!"
+                        >
+                          & SEA
+                        </button>
+                      )}
                     </span>
+                    <img src="/bot.svg" className="w-12 h-12 sm:w-20 sm:h-20 lg:w-28 lg:h-28 xl:w-32 xl:h-32 ml-4 sm:ml-6 align-middle inline-block" alt="Bot Logo" />
                   </span>
                   <span className="block mt-1">Unified.</span>
                 </h1>
@@ -2025,6 +2095,12 @@ export default function Home() {
                   className="text-sm font-bold uppercase tracking-wide text-white border-4 border-transparent hover:border-white hover:bg-[#FFD93D] hover:text-black px-3 py-1.5 transition-all duration-100"
                 >
                   Docs
+                </a>
+                <a
+                  href="mailto:hello@sandipan.ch"
+                  className="text-sm font-bold uppercase tracking-wide text-white border-4 border-transparent hover:border-white hover:bg-[#86EFAC] hover:text-black px-3 py-1.5 transition-all duration-100"
+                >
+                  Contact
                 </a>
               </div>
             </div>
