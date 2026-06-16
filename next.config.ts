@@ -8,7 +8,8 @@ const nextConfig: NextConfig = {
         'superea.app'
       ]
     }
-  }
+  },
+  serverExternalPackages: ["@mastra/core", "@mastra/ai-sdk"]
 }
 
 module.exports = {

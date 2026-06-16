@@ -125,7 +125,8 @@ export function SignupForm({
                   variant="outline" 
                   type="button" 
                   onClick={handleGoogleSignUp}
-                  className="w-full border-4 border-black dark:border-white rounded-none font-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:bg-[#FFFDF5] dark:hover:bg-[#121214] uppercase text-xs flex gap-2 justify-center py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] dark:hover:shadow-[2px_2px_0px_0px_#fff] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-black dark:text-white cursor-pointer"
+                  disabled={loading || countdown !== null}
+                  className="w-full border-4 border-black dark:border-white rounded-none font-black shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:bg-[#FFFDF5] dark:hover:bg-[#121214] uppercase text-xs flex gap-2 justify-center py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] dark:hover:shadow-[2px_2px_0px_0px_#fff] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-black dark:text-white cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
                 >
                   <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
@@ -133,7 +134,7 @@ export function SignupForm({
                       fill="currentColor"
                     />
                   </svg>
-                  Sign up with Google
+                  {loading ? "Signing up..." : "Sign up with Google"}
                 </Button>
               </Field>
 
