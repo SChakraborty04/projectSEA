@@ -5,6 +5,8 @@ import { user } from "@/db/schema/auth"
 import { eq } from "drizzle-orm"
 import { AgentSetupForm } from "@/components/agent-setup-form"
 
+export const dynamic = 'force-dynamic';
+
 export default async function SetupAgentPage() {
   const session = await getSession();
   let existingProfile = null;

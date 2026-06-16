@@ -71,6 +71,15 @@ export function AgentSetupForm({
     isSettingUp: false,
   });
 
+  // Sync state if server prop changes
+  React.useEffect(() => {
+    setTelegramStatus(prev => ({
+      ...prev,
+      isConnected: !!telegramChatId,
+      chatId: telegramChatId || null,
+    }));
+  }, [telegramChatId]);
+
   const handleConnectTelegram = async () => {
     try {
       setTelegramStatus(prev => ({ ...prev, isSettingUp: true }));
@@ -92,6 +101,7 @@ export function AgentSetupForm({
         isSettingUp: false,
       });
       toast.success("Telegram webhook activated!");
+      router.refresh();
     } catch (error) {
       toast.error("Failed to connect Telegram bot. Make sure TELEGRAM_BOT_TOKEN is set on the server.");
       console.error(error);
