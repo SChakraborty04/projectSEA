@@ -100,7 +100,11 @@ export function AgentSetupForm({
         connectionCode: data.connectionCode,
         isSettingUp: false,
       });
-      toast.success("Telegram webhook activated!");
+      if (data.warning) {
+        toast.warning(data.warning, { duration: 10000 });
+      } else {
+        toast.success("Telegram webhook activated!");
+      }
       router.refresh();
     } catch (error) {
       toast.error("Failed to connect Telegram bot. Make sure TELEGRAM_BOT_TOKEN is set on the server.");

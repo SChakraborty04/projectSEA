@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        // 1. Fetch integration ID for telegram in corsair_integrations (create it if missing)
+        // 1. Ensure telegram integration exists in corsair_integrations
         await pool.query(
             `INSERT INTO corsair_integrations (id, name, config) 
              VALUES ('telegram', 'Telegram', '{}') 
@@ -42,27 +42,69 @@ export async function POST(req: Request) {
             );
         }
 
-        // 3. Register the single static webhook with Telegram via Corsair client (using default tenant)
+        // 3. Register the webhook via Corsair — wrapped in try/catch so an ISP that
+        //    blocks api.telegram.org (common in India) doesn't kill code generation.
         const client = corsair.withTenant('default');
-        await client.telegram.api.webhook.setWebhook({
-            url: `${getAppUrl()}/api/webhooks`,
-            secret_token: process.env.TELEGRAM_WEBHOOK_SECRET || 'superea_telegram_secret'
-        });
+        const webhookUrl = `${getAppUrl()}/api/webhooks`;
+        const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET || 'superea_telegram_secret';
 
-        // 4. Retrieve the bot username dynamically
-        const botInfo = await client.telegram.api.me.getMe({});
-        const botUsername = botInfo.username;
+        let botUsername: string | null = null;
+        let webhookWarning: string | null = null;
 
-        // 5. Generate a 6-digit connection code and save to user table
+        try {
+            console.log(`[Telegram Setup] Registering webhook: ${webhookUrl}`);
+            await client.telegram.api.webhook.setWebhook({
+                url: webhookUrl,
+                secret_token: webhookSecret,
+            });
+            console.log('[Telegram Setup] setWebhook OK');
+
+            // 4. Retrieve the bot username dynamically
+            const botInfo = await client.telegram.api.me.getMe({});
+            botUsername = botInfo.username??"";
+        } catch (networkErr: any) {
+            // Detect ISP-level connectivity blocks (ConnectTimeoutError, fetch failed, etc.)
+            const causeCode: string = networkErr?.cause?.code ?? '';
+            const causeMsg: string = networkErr?.message ?? '';
+            const isNetworkBlock =
+                causeCode === 'UND_ERR_CONNECT_TIMEOUT' ||
+                causeCode === 'ECONNREFUSED' ||
+                causeCode === 'ENOTFOUND' ||
+                causeMsg.toLowerCase().includes('fetch failed') ||
+                causeMsg.toLowerCase().includes('connect timeout');
+
+            if (isNetworkBlock) {
+                console.warn(
+                    `[Telegram Setup] ISP is blocking api.telegram.org ` +
+                    `(${causeCode || causeMsg}). ` +
+                    `Webhook registration skipped — connection code still saved.`
+                );
+                webhookWarning =
+                    `⚠️ Your ISP or network is blocking connections to Telegram's servers ` +
+                    `(api.telegram.org). The 6-digit connection code below is still valid. ` +
+                    `Open the bot on your phone and send it the code to link your account. ` +
+                    `Webhook registration works correctly on the production server.`;
+            } else {
+                // Re-throw unexpected errors so they surface properly
+                throw networkErr;
+            }
+        }
+
+        // 5. Generate a 6-digit connection code, reset the linked chat, and store the code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
-        
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // expires in 15 minutes
+
         await pool.query(
             `UPDATE "user" SET telegram_connection_code = $1, telegram_code_expires_at = $2, telegram_chat_id = NULL WHERE id = $3`,
             [code, expiresAt, session.user.id]
         );
 
-        return NextResponse.json({ success: true, botUsername, connectionCode: code });
+        return NextResponse.json({
+            success: true,
+            botUsername,
+            connectionCode: code,
+            warning: webhookWarning,
+        });
     } catch (err: any) {
         console.error('[Telegram Setup Error]', err);
         return NextResponse.json({ error: String(err) }, { status: 500 });
