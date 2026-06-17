@@ -83,70 +83,6 @@ function isPriority(msg: EmailMessage): boolean {
 }
 
 // Helper to parse dates & times from email subject/body
-function parseEmailDateTime(subject: string, body: string) {
-  const text = (subject + " " + body).toLowerCase()
-  
-  let date = new Date()
-  date.setDate(date.getDate() + 1) // Default to tomorrow
-  
-  if (text.includes("today")) {
-    date = new Date()
-  } else if (text.includes("tomorrow")) {
-    date = new Date()
-    date.setDate(date.getDate() + 1)
-  } else {
-    // Try regex for Month DD
-    const monthRegex = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2})\b/i
-    const match = text.match(monthRegex)
-    if (match) {
-      const monthStr = match[1]
-      const day = parseInt(match[2], 10)
-      const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
-      const monthIdx = months.indexOf(monthStr.substring(0, 3).toLowerCase())
-      if (monthIdx !== -1) {
-        date.setMonth(monthIdx)
-        date.setDate(day)
-      }
-    }
-  }
-
-  // Find time like "3:00 PM" or "10:00 AM" or "11 AM"
-  let hours = 10
-  let minutes = 0
-  const timeRegex = /\b(1[0-2]|0?[1-9])(?::([0-5][0-9]))?\s*(am|pm)\b/i
-  const timeMatch = text.match(timeRegex)
-  if (timeMatch) {
-    let h = parseInt(timeMatch[1], 10)
-    const m = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0
-    const ampm = timeMatch[3].toLowerCase()
-    if (ampm === "pm" && h < 12) h += 12
-    if (ampm === "am" && h === 12) h = 0
-    hours = h
-    minutes = m
-  } else {
-    // Check 24h format like 14:30
-    const time24Regex = /\b(2[0-3]|[0-1]?[0-9]):([0-5][0-9])\b/
-    const match24 = text.match(time24Regex)
-    if (match24) {
-      hours = parseInt(match24[1], 10)
-      minutes = parseInt(match24[2], 10)
-    }
-  }
-
-  date.setHours(hours, minutes, 0, 0)
-
-  // Shift by timezone offset to get local string for datetime-local
-  const offset = date.getTimezoneOffset()
-  const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000))
-  const startStr = adjustedDate.toISOString().slice(0, 16)
-
-  // End date is 1 hour later
-  const endDate = new Date(date.getTime() + (60 * 60 * 1000))
-  const adjustedEndDate = new Date(endDate.getTime() - (offset * 60 * 1000))
-  const endStr = adjustedEndDate.toISOString().slice(0, 16)
-
-  return { startStr, endStr }
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -357,12 +293,14 @@ export default function EmailPage() {
   const [commandPaletteSearch, setCommandPaletteSearch] = useState('')
   const [showCalendarModal, setShowCalendarModal] = useState(false)
   const [isCreatingEvent, setIsCreatingEvent] = useState(false)
+  const [isExtractingCalendar, setIsExtractingCalendar] = useState(false)
   const [calendarEventData, setCalendarEventData] = useState({
     summary: '',
     description: '',
     startDateTime: '',
     endDateTime: ''
   })
+
 
   // AI Chat states
   const [input, setInput] = useState('')
@@ -468,21 +406,60 @@ export default function EmailPage() {
   }, [])
 
   // ── Email-to-Calendar triggers ───────────────────────────────────────────
-  const handleOpenCalendarInvite = () => {
+  const handleOpenCalendarInvite = async () => {
     if (!selectedMessage) return
     const sender = getSenderName(selectedMessage.from)
     const subject = selectedMessage.subject || 'Meeting'
-    
-    // Parse start & end times based on text patterns
-    const { startStr, endStr } = parseEmailDateTime(subject, selectedMessage.body || selectedMessage.snippet || "")
 
+    // Show the modal immediately with a loading state
     setCalendarEventData({
       summary: `Meeting with ${sender} re: ${subject}`,
       description: `Based on email from ${selectedMessage.from}:\n\n${selectedMessage.snippet}`,
-      startDateTime: startStr,
-      endDateTime: endStr
+      startDateTime: '',
+      endDateTime: ''
     })
     setShowCalendarModal(true)
+    setIsExtractingCalendar(true)
+
+    try {
+      const res = await fetch('/api/emails/extract-calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject,
+          body: selectedMessage.body || selectedMessage.snippet || '',
+          from: selectedMessage.from,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
+      })
+
+      if (res.ok) {
+        const { data } = await res.json()
+        // datetime-local input expects "YYYY-MM-DDTHH:mm" — slice to 16 chars
+        setCalendarEventData({
+          summary: data.summary || `Meeting with ${sender} re: ${subject}`,
+          description: data.description || `Based on email from ${selectedMessage.from}:\n\n${selectedMessage.snippet}`,
+          startDateTime: data.startDateTime?.slice(0, 16) || '',
+          endDateTime: data.endDateTime?.slice(0, 16) || '',
+        })
+      } else {
+        // Fallback: tomorrow at 10 AM
+        const tomorrow = new Date()
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        tomorrow.setHours(10, 0, 0, 0)
+        const end = new Date(tomorrow.getTime() + 60 * 60 * 1000)
+        const fmt = (d: Date) => {
+          const pad = (n: number) => String(n).padStart(2, '0')
+          return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+        }
+        setCalendarEventData(prev => ({ ...prev, startDateTime: fmt(tomorrow), endDateTime: fmt(end) }))
+        toast.error('Could not extract date automatically — please fill in manually')
+      }
+    } catch {
+      toast.error('AI extraction failed — please fill in the date manually')
+    } finally {
+      setIsExtractingCalendar(false)
+    }
   }
 
   // ── AI actions ────────────────────────────────────────────────────────────
@@ -1132,6 +1109,16 @@ export default function EmailPage() {
                 ✕
               </Button>
             </div>
+
+            {/* AI extraction loading banner */}
+            {isExtractingCalendar && (
+              <div className="flex items-center gap-3 px-5 py-3 bg-[#FFD93D] dark:bg-[#db6802] border-b-4 border-black dark:border-white">
+                <Loader2 className="h-4 w-4 animate-spin text-black flex-shrink-0" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-black">
+                  AI is reading your email to extract date &amp; time...
+                </span>
+              </div>
+            )}
 
             <form 
               onSubmit={async (e) => {
