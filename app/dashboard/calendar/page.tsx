@@ -82,6 +82,9 @@ export default function CalendarPage() {
   const { messages: aiMessages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
+      body: {
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
     }),
   })
 

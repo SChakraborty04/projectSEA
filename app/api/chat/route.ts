@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
         const body = await req.json();
         console.log("REQUEST BODY:", JSON.stringify(body, null, 2));
-        const { messages } = body;
+        const { messages, timezone } = body;
 
         const allMessages = body.messages || [];
         const latestMessage = allMessages.length > 0 ? allMessages[allMessages.length - 1] : null;
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
             }).filter(Boolean).join("\n");
         }
 
-        const agent = await getCorsairAgent(accountId, historyTranscript);
+        const agent = await getCorsairAgent(accountId, historyTranscript, timezone);
 
         const mastra = new Mastra({
             agents: {

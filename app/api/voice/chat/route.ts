@@ -10,13 +10,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { text, history } = await req.json();
+    const { text, history, timezone } = await req.json();
     if (!text) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
     }
 
     // Load the Mastra agent
-    const agent = await getCorsairAgent(tenantId, history || "");
+    const agent = await getCorsairAgent(tenantId, history || "", timezone);
 
     // Execute the agent in blocking mode to resolve all tool calls
     const result = await agent.generate(text, {

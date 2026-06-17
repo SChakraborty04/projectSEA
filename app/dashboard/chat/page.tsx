@@ -27,6 +27,9 @@ function Chat() {
   const { messages, setMessages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
+      body: {
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
     }),
   })
 

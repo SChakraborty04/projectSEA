@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { requestEmailApproval } from './telegram-approval';
 import { pool } from '../db/index';
 
-export async function getCorsairAgent(tenantId: string, historyTranscript: string = "") {
+export async function getCorsairAgent(tenantId: string, historyTranscript: string = "", clientTimezone?: string) {
     const activeCorsair = typeof corsair.withTenant === 'function' ? (corsair as any).withTenant(tenantId) : corsair;
     
     const provider = new MastraProvider();
@@ -21,8 +21,11 @@ export async function getCorsairAgent(tenantId: string, historyTranscript: strin
     });
 
     const now = new Date();
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const todayStr = now.toISOString().split('T')[0];
+    // clientTimezone is passed from browser (most accurate).
+    // Falls back to agent profile timezone, then server TZ (least accurate — DO NOT rely on this for IST users).
+    let timeZone = clientTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    // todayStr will be corrected after profile load if profile has timezone
+    let todayStr = now.toISOString().split('T')[0];
 
     // 1. Load User Profile and Agent Profile context
     let userName = "User";
@@ -57,7 +60,11 @@ AGENT IDENTITY & USER CONTEXT:
             if (profile.company_name) profileContext += `- Company Name: ${profile.company_name}\n`;
             if (profile.designation) profileContext += `- User's Designation/Role: ${profile.designation}\n`;
             if (profile.business_description) profileContext += `- Business Description: ${profile.business_description}\n`;
-            if (profile.timezone) profileContext += `- Agent/User Timezone: ${profile.timezone}\n`;
+            if (profile.timezone) {
+                // Override timeZone with the value explicitly set by the user in their profile
+                if (!clientTimezone) timeZone = profile.timezone;
+                profileContext += `- Agent/User Timezone: ${profile.timezone}\n`;
+            }
             if (profile.working_hours_start) profileContext += `- Working Hours: ${profile.working_hours_start} to ${profile.working_hours_end || '18:00'}\n`;
             if (profile.working_days) {
                 const days = Array.isArray(profile.working_days) 
@@ -81,6 +88,9 @@ AGENT IDENTITY & USER CONTEXT:
     } catch (err) {
         console.error('[Agent Profile] Failed to load user/agent profile:', err);
     }
+
+    // Recompute todayStr in the user's actual timezone (critical for IST users — UTC date can be 1 day behind)
+    todayStr = new Date().toLocaleDateString('en-CA', { timeZone });
 
     let dailyContextText = "No daily context built for today yet.";
     try {
