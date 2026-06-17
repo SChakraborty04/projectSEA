@@ -8,6 +8,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 export function NavSecondary({
@@ -20,6 +21,8 @@ export function NavSecondary({
     icon: React.ReactNode
   }[]
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+  const { setOpenMobile } = useSidebar()
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
@@ -37,6 +40,7 @@ export function NavSecondary({
                       e.preventDefault()
                       window.dispatchEvent(new Event("start-dashboard-tour"))
                     }
+                    setOpenMobile(false)
                   }}
                   className="flex items-center gap-2"
                 >

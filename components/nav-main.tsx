@@ -1,19 +1,15 @@
 "use client"
 
-"use client"
-
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { PlusSignCircleIcon, Mail01Icon } from "@hugeicons/core-free-icons"
 
 export function NavMain({
   items,
@@ -25,6 +21,7 @@ export function NavMain({
   }[]
 }) {
   const pathname = usePathname()
+  const { setOpenMobile } = useSidebar()
 
   return (
     <SidebarGroup>
@@ -48,7 +45,11 @@ export function NavMain({
                       : "hover:bg-[#FFFDF5] dark:hover:bg-black hover:border-black dark:hover:border-white hover:shadow-[3px_3px_0px_0px_#000] dark:hover:shadow-[3px_3px_0px_0px_#fff]"
                   }`}
                 >
-                  <Link href={item.url} className="flex items-center gap-2">
+                  <Link
+                    href={item.url}
+                    className="flex items-center gap-2"
+                    onClick={() => setOpenMobile(false)}
+                  >
                     {item.icon}
                     <span>{item.title}</span>
                   </Link>
