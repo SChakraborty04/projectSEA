@@ -219,7 +219,7 @@ export default function CalendarPage() {
         events: d.events
       }))
 
-      type DatetimeEntry = { key: string; field: 'datetime' | 'endDatetime'; value: string }
+      type DatetimeEntry = { key: string; field: 'datetime'; value: string }
       const allEntries: DatetimeEntry[] = []
 
       rawData.forEach((group, gi) => {
@@ -227,9 +227,6 @@ export default function CalendarPage() {
           const key = `${gi}:${ei}`
           if (ev.datetime) {
             allEntries.push({ key, field: 'datetime', value: ev.datetime })
-          }
-          if ((ev as any).endDatetime) {
-            allEntries.push({ key, field: 'endDatetime', value: (ev as any).endDatetime })
           }
         })
       })

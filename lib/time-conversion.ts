@@ -260,7 +260,8 @@ function parseRelative(value: string, timezone: string): Date | null {
 
   if (lower === "now") return new Date();
 
-  const today = startOfDayInTimezone(new Date(), timezone);
+  const todayParts = startOfDayInTimezone(new Date(), timezone);
+  const today = makeTimezoneDate(todayParts.year, todayParts.month, todayParts.day, 0, 0, 0, 0, timezone);
 
   if (lower === "today") return today;
   if (lower === "tomorrow") return addDaysInTimezone(today, 1, timezone);
@@ -306,7 +307,7 @@ function parseLocalComponents(value: string, timezone: string, options: TimeConv
 
   const startIndex = timeMatch?.index ?? 0;
   const beforeTime = text.slice(0, startIndex).trim();
-  const afterTime = text.slice(startIndex + timePart.length).trim();
+  const afterTime = text.slice(startIndex + (timePart as string).length).trim();
   const dateText = [beforeTime, afterTime].filter(Boolean).join(" ");
   const parsedDate = dateText ? parseDateOnly(dateText, timezone, locale, fallbackDate) : fallbackDate;
 
