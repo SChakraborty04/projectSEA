@@ -1124,16 +1124,42 @@ export default function EmailPage() {
               onSubmit={async (e) => {
                 e.preventDefault()
                 const target = e.currentTarget
-                // Send naive local datetimes (from datetime-local input) + the browser
-                // timezone separately. The server passes timeZone to Google Calendar API
-                // so it correctly interprets the times in the user's local timezone.
-                // Do NOT convert to UTC here — that would lose the timezone intent.
+                const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+                // Convert local datetime strings to UTC via the time API
+                const startLocal = (target.elements.namedItem('start') as HTMLInputElement).value
+                const endLocal = (target.elements.namedItem('end') as HTMLInputElement).value
+
+                let startUtc: string, endUtc: string
+                try {
+                  const convRes = await fetch('/api/time/local-to-utc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      items: [
+                        { value: startLocal, timezone: userTimezone },
+                        { value: endLocal, timezone: userTimezone },
+                      ],
+                      timezone: userTimezone,
+                    }),
+                  })
+                  if (!convRes.ok) throw new Error('Time conversion failed')
+                  const convJson = await convRes.json()
+                  if (convJson.errors?.length > 0) throw new Error(convJson.errors[0].error || 'Time conversion error')
+                  const results = convJson.converted?.map((r: any) => r.result)
+                  if (!results || results.length < 2) throw new Error('Incomplete time conversion')
+                  startUtc = results[0].utc
+                  endUtc = results[1].utc
+                } catch (convErr: any) {
+                  toast.error(convErr.message || "Failed to convert time to UTC")
+                  return
+                }
+
                 const data = {
                   summary: (target.elements.namedItem('summary') as HTMLInputElement).value,
                   description: (target.elements.namedItem('description') as HTMLTextAreaElement).value,
-                  startDateTime: (target.elements.namedItem('start') as HTMLInputElement).value,
-                  endDateTime: (target.elements.namedItem('end') as HTMLInputElement).value,
-                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  startDateTime: startUtc,
+                  endDateTime: endUtc,
                 }
 
                 setIsCreatingEvent(true)

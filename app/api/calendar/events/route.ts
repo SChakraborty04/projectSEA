@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getSession } from '@/lib/session';
 import { pool } from '@/db/index';
 import { corsair } from '@/lib/corsair';
+import { parseUtc } from '@/lib/time-conversion';
 
 type RawEvent = {
     id: string;
@@ -13,15 +14,11 @@ type RawEvent = {
 };
 
 function normaliseEvent(m: RawEvent) {
-    const time = m.start?.dateTime
-        ? new Date(m.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : 'All Day';
-    
     const datetime = m.start?.dateTime || m.start?.date || '';
     let day = null;
     if (datetime) {
         day = new Date(datetime);
-        day.setHours(0, 0, 0, 0); // Normalize to start of day
+        day.setUTCHours(0, 0, 0, 0);
     }
 
     const rawSummary = m.summary || 'Untitled Event';
@@ -31,8 +28,8 @@ function normaliseEvent(m: RawEvent) {
     return {
         id: m.id || Math.random().toString(),
         name: displayName,
-        time,
         datetime,
+        endDatetime: m.end?.dateTime || m.end?.date || '',
         day,
         completed: isCompleted,
     };
@@ -55,7 +52,6 @@ async function fetchFromDb(tenantId: string) {
         .map(normaliseEvent)
         .filter((e: any) => e.day !== null);
 
-    // Group by day for the calendar
     const grouped = events.reduce((acc: Record<string, any>, event: any) => {
         const dateKey = event.day!.toISOString();
         if (!acc[dateKey]) {
@@ -95,39 +91,14 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { summary, description, startDateTime, endDateTime, timezone } = body;
+        const { summary, description, startDateTime, endDateTime } = body;
 
         if (!summary || !startDateTime || !endDateTime) {
             return NextResponse.json({ error: 'Missing summary, startDateTime, or endDateTime' }, { status: 400 });
         }
 
-        // Use provided timezone or fall back to UTC.
-        // IMPORTANT: Google Calendar requires timeZone in start/end to correctly
-        // interpret the datetime — without it, the API defaults to UTC.
-        let eventTimezone = timezone || 'UTC';
-
-        // Normalize deprecated IANA timezone aliases that browsers may return
-        // but Google Calendar API rejects (400 Bad Request).
-        const TZ_ALIASES: Record<string, string> = {
-            'Asia/Calcutta': 'Asia/Kolkata',
-            'US/Eastern': 'America/New_York',
-            'US/Central': 'America/Chicago',
-            'US/Pacific': 'America/Los_Angeles',
-            'US/Mountain': 'America/Denver',
-            'GB': 'Europe/London',
-        };
-        eventTimezone = TZ_ALIASES[eventTimezone] ?? eventTimezone;
-
-        // Strip any trailing 'Z' or offset from the datetime string so Google
-        // uses the timeZone field (not UTC) to interpret the time.
-        // Ensure seconds are present — Google Calendar requires full RFC 3339 format.
-        const toNaiveLocal = (dt: string) => {
-            const stripped = dt.replace(/Z$/, '').replace(/[+-]\d{2}:\d{2}$/, '').slice(0, 16);
-            return stripped.length === 16 ? `${stripped}:00` : stripped; // append :00 seconds if missing
-        };
-        const startLocal = toNaiveLocal(startDateTime);
-        const endLocal = toNaiveLocal(endDateTime);
-
+        parseUtc(startDateTime);
+        parseUtc(endDateTime);
 
         const client = corsair.withTenant(tenantId);
         const res = await client.googlecalendar.api.events.create({
@@ -136,12 +107,12 @@ export async function POST(request: NextRequest) {
                 summary,
                 description,
                 start: {
-                    dateTime: startLocal,
-                    timeZone: eventTimezone,
+                    dateTime: startDateTime,
+                    timeZone: 'UTC',
                 },
                 end: {
-                    dateTime: endLocal,
-                    timeZone: eventTimezone,
+                    dateTime: endDateTime,
+                    timeZone: 'UTC',
                 }
             }
         });
@@ -170,8 +141,7 @@ export async function PATCH(request: NextRequest) {
         }
 
         const client = corsair.withTenant(tenantId);
-        
-        // 1. Fetch current event details
+
         const event = await client.googlecalendar.api.events.get({
             calendarId: 'primary',
             id: eventId
@@ -181,7 +151,6 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: 'Event not found' }, { status: 404 });
         }
 
-        // 2. Adjust summary based on completion status
         const currentSummary = event.summary || 'Untitled Event';
         let newSummary = currentSummary;
 
@@ -195,7 +164,6 @@ export async function PATCH(request: NextRequest) {
             }
         }
 
-        // 3. Update the event on Google Calendar
         const updatedEvent = await client.googlecalendar.api.events.update({
             calendarId: 'primary',
             id: eventId,
@@ -208,7 +176,6 @@ export async function PATCH(request: NextRequest) {
             }
         });
 
-        // 4. Update the local postgres database cache (data JSONB property)
         await pool.query(
             `UPDATE corsair_entities e
              SET data = data || $1::jsonb, updated_at = NOW()

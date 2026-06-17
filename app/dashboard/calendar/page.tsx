@@ -9,6 +9,30 @@ import {
 } from "lucide-react"
 import { format, isSameDay, startOfToday } from "date-fns"
 
+function formatEventTime(datetime: string): string {
+  if (!datetime) return 'All Day';
+  try {
+    const d = new Date(datetime);
+    if (isNaN(d.getTime())) return 'All Day';
+    return new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }).format(d);
+  } catch {
+    return 'All Day';
+  }
+}
+
+function formatEventTimeRange(startDatetime: string, endDatetime: string): string {
+  const start = formatEventTime(startDatetime);
+  const end = formatEventTime(endDatetime);
+  if (start === 'All Day' && end === 'All Day') return 'All Day';
+  if (start === 'All Day') return `Until ${end}`;
+  if (end === 'All Day') return `${start} → All Day`;
+  return `${start} → ${end}`;
+}
+
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { CalendarData } from "@/components/ui/fullscreen-calendar"
@@ -163,7 +187,7 @@ export default function CalendarPage() {
     
     // Inject selected calendar event context if present
     if (selectedEvent) {
-      textToSend = `[Context Selected Calendar Event: Name: "${selectedEvent.name}", Original Time: "${selectedEvent.time}", Event ID: "${selectedEvent.id}"]\n\n${input}`
+      textToSend = `[Context Selected Calendar Event: Name: "${selectedEvent.name}", Time: "${formatEventTimeRange(selectedEvent.datetime, (selectedEvent as any).endDatetime)}", Event ID: "${selectedEvent.id}"]\n\n${input}`
     }
 
     sendMessage({ text: textToSend })
@@ -189,14 +213,88 @@ export default function CalendarPage() {
       setIsRefreshing(true)
       const res = await fetch('/api/calendar/events')
       const json = await res.json()
-      
-      // We must map string dates back to Date objects
-      const parsedData: CalendarData[] = (json.data || []).map((d: any) => ({
+
+      const rawData: CalendarData[] = (json.data || []).map((d: any) => ({
         day: new Date(d.day),
         events: d.events
       }))
 
-      setData(parsedData)
+      type DatetimeEntry = { key: string; field: 'datetime' | 'endDatetime'; value: string }
+      const allEntries: DatetimeEntry[] = []
+
+      rawData.forEach((group, gi) => {
+        group.events.forEach((ev, ei) => {
+          const key = `${gi}:${ei}`
+          if (ev.datetime) {
+            allEntries.push({ key, field: 'datetime', value: ev.datetime })
+          }
+          if ((ev as any).endDatetime) {
+            allEntries.push({ key, field: 'endDatetime', value: (ev as any).endDatetime })
+          }
+        })
+      })
+
+      if (allEntries.length === 0) {
+        setData(rawData)
+        setLastRefreshed(new Date())
+        return
+      }
+
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+      try {
+        const convRes = await fetch('/api/time/utc-to-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: allEntries.map((e) => ({ value: e.value, timezone: userTimezone })),
+            timezone: userTimezone,
+            format: 'datetime',
+          }),
+        })
+
+        if (convRes.ok) {
+          const convJson = await convRes.json()
+          if (convJson.success && convJson.converted) {
+            const convertedMap: Map<number, string> = new Map()
+            convJson.converted.forEach((entry: any) => {
+              if (entry.ok) {
+                convertedMap.set(entry.index, entry.result.utc)
+              }
+            })
+
+            const convertedData: CalendarData[] = rawData.map((group, gi) => ({
+              day: group.day,
+              events: group.events.map((ev, ei) => {
+                const key = `${gi}:${ei}`
+                let updated = { ...ev }
+                allEntries.forEach((entry, idx) => {
+                  if (entry.key === key) {
+                    const converted = convertedMap.get(idx)
+                    if (converted) {
+                      updated[entry.field] = converted
+                    }
+                  }
+                })
+                return updated
+              }),
+            }))
+
+            setData(convertedData)
+            setLastRefreshed(new Date())
+            return
+          }
+        }
+
+        if (!convRes.ok) {
+          const errBody = await convRes.json().catch(() => ({}))
+          throw new Error(errBody.error ?? `utc-to-local returned ${convRes.status}`)
+        }
+      } catch (convErr) {
+        console.error('[Calendar] UTC→local conversion error, falling back to raw UTC:', convErr)
+      }
+
+      setData(rawData)
       setLastRefreshed(new Date())
     } catch {
       // silently fail — retry on next poll
@@ -435,7 +533,7 @@ export default function CalendarPage() {
                             </h3>
                             <p className="text-[10px] font-bold uppercase tracking-wide text-black/60 dark:text-white/60 flex items-center gap-2">
                               <span className={`inline-block h-2 w-2 rounded-none border border-black ${isCompleted ? 'bg-gray-400' : 'bg-[#86EFAC]'}`}></span>
-                              {event.time}
+                              {formatEventTimeRange(event.datetime, (event as any).endDatetime)}
                             </p>
                           </div>
                         </div>
@@ -513,7 +611,7 @@ export default function CalendarPage() {
                     <button onClick={() => setSelectedEvent(null)} className="text-[9px] font-black uppercase text-[#FF6B6B] hover:underline">Clear</button>
                   </div>
                   <div className="text-[10px] font-black uppercase tracking-wider text-black dark:text-white truncate">
-                    {selectedEvent.name} ({selectedEvent.time})
+                    {selectedEvent.name} ({formatEventTimeRange(selectedEvent.datetime, (selectedEvent as any).endDatetime)})
                   </div>
                 </div>
               )}

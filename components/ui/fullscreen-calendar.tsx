@@ -31,7 +31,6 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 export interface Event {
   id: string | number
   name: string
-  time: string
   datetime: string
 }
 
@@ -298,7 +297,13 @@ export function FullScreenCalendar({ data, selectedDay: controlledSelectedDay, o
                                 {event.name}
                               </p>
                               <p className="leading-none text-muted-foreground">
-                                {event.time}
+                                {event.datetime
+                                  ? new Intl.DateTimeFormat(undefined, {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                    }).format(new Date(event.datetime))
+                                  : 'All Day'}
                               </p>
                             </div>
                           ))}
