@@ -54,7 +54,7 @@ SuperEA is a real-time, proactive AI Executive Assistant Command Center built us
 ## 🛠 Tech Stack
 - **Framework**: Next.js (with App Router, React 19)
 - **Database**: PostgreSQL (Neon Database) & Drizzle ORM
-- **Integrations**: Corsair (Gmail, Google Calendar, Telegram plugins)
+- **Integrations**: Corsair (Gmail, Google Calendar, Telegram plugins(Cuurntly using native fetch api))
 - **AI Engine**: Mastra Agent Framework & OpenRouter (`gemini-3.1-flash-lite`)
 - **Animations**: Framer Motion (for modal drawers and overlays)
 - **Styles**: Tailwind CSS v4 & Lucide React Icons
