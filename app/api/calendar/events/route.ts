@@ -95,11 +95,22 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { summary, description, startDateTime, endDateTime } = body;
+        const { summary, description, startDateTime, endDateTime, timezone } = body;
 
         if (!summary || !startDateTime || !endDateTime) {
             return NextResponse.json({ error: 'Missing summary, startDateTime, or endDateTime' }, { status: 400 });
         }
+
+        // Use provided timezone or fall back to UTC.
+        // IMPORTANT: Google Calendar requires timeZone in start/end to correctly
+        // interpret the datetime — without it, the API defaults to UTC.
+        const eventTimezone = timezone || 'UTC';
+
+        // Strip any trailing 'Z' or offset from the datetime string so Google
+        // uses the timeZone field (not UTC) to interpret the time.
+        const toNaiveLocal = (dt: string) => dt.replace(/Z$/, '').replace(/[+-]\d{2}:\d{2}$/, '').slice(0, 16);
+        const startLocal = toNaiveLocal(startDateTime);
+        const endLocal = toNaiveLocal(endDateTime);
 
         const client = corsair.withTenant(tenantId);
         const res = await client.googlecalendar.api.events.create({
@@ -108,10 +119,12 @@ export async function POST(request: NextRequest) {
                 summary,
                 description,
                 start: {
-                    dateTime: startDateTime,
+                    dateTime: startLocal,
+                    timeZone: eventTimezone,
                 },
                 end: {
-                    dateTime: endDateTime,
+                    dateTime: endLocal,
+                    timeZone: eventTimezone,
                 }
             }
         });

@@ -1124,11 +1124,16 @@ export default function EmailPage() {
               onSubmit={async (e) => {
                 e.preventDefault()
                 const target = e.currentTarget
+                // Send naive local datetimes (from datetime-local input) + the browser
+                // timezone separately. The server passes timeZone to Google Calendar API
+                // so it correctly interprets the times in the user's local timezone.
+                // Do NOT convert to UTC here — that would lose the timezone intent.
                 const data = {
                   summary: (target.elements.namedItem('summary') as HTMLInputElement).value,
                   description: (target.elements.namedItem('description') as HTMLTextAreaElement).value,
-                  startDateTime: new Date((target.elements.namedItem('start') as HTMLInputElement).value).toISOString(),
-                  endDateTime: new Date((target.elements.namedItem('end') as HTMLInputElement).value).toISOString(),
+                  startDateTime: (target.elements.namedItem('start') as HTMLInputElement).value,
+                  endDateTime: (target.elements.namedItem('end') as HTMLInputElement).value,
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 }
 
                 setIsCreatingEvent(true)
@@ -1153,6 +1158,7 @@ export default function EmailPage() {
               }}
               className="p-5 space-y-4"
             >
+
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest">Event Title</label>
                 <input
