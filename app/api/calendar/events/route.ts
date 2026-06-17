@@ -104,13 +104,30 @@ export async function POST(request: NextRequest) {
         // Use provided timezone or fall back to UTC.
         // IMPORTANT: Google Calendar requires timeZone in start/end to correctly
         // interpret the datetime — without it, the API defaults to UTC.
-        const eventTimezone = timezone || 'UTC';
+        let eventTimezone = timezone || 'UTC';
+
+        // Normalize deprecated IANA timezone aliases that browsers may return
+        // but Google Calendar API rejects (400 Bad Request).
+        const TZ_ALIASES: Record<string, string> = {
+            'Asia/Calcutta': 'Asia/Kolkata',
+            'US/Eastern': 'America/New_York',
+            'US/Central': 'America/Chicago',
+            'US/Pacific': 'America/Los_Angeles',
+            'US/Mountain': 'America/Denver',
+            'GB': 'Europe/London',
+        };
+        eventTimezone = TZ_ALIASES[eventTimezone] ?? eventTimezone;
 
         // Strip any trailing 'Z' or offset from the datetime string so Google
         // uses the timeZone field (not UTC) to interpret the time.
-        const toNaiveLocal = (dt: string) => dt.replace(/Z$/, '').replace(/[+-]\d{2}:\d{2}$/, '').slice(0, 16);
+        // Ensure seconds are present — Google Calendar requires full RFC 3339 format.
+        const toNaiveLocal = (dt: string) => {
+            const stripped = dt.replace(/Z$/, '').replace(/[+-]\d{2}:\d{2}$/, '').slice(0, 16);
+            return stripped.length === 16 ? `${stripped}:00` : stripped; // append :00 seconds if missing
+        };
         const startLocal = toNaiveLocal(startDateTime);
         const endLocal = toNaiveLocal(endDateTime);
+
 
         const client = corsair.withTenant(tenantId);
         const res = await client.googlecalendar.api.events.create({
