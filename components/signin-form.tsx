@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { signin } from "@/actions/signin"
 import { authClient } from "@/lib/auth-client"
 
@@ -45,6 +45,16 @@ export function SigninForm({
   const [forgotEmail, setForgotEmail] = useState("")
   const [forgotLoading, setForgotLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Show success toast when user arrives from email verification link
+  useEffect(() => {
+    if (searchParams.get("verified") === "true") {
+      toast.success("Email verified successfully! You can now sign in.", { duration: 6000 })
+      // Clean the URL so refreshing doesn't re-trigger the toast
+      router.replace("/signin", { scroll: false })
+    }
+  }, [searchParams, router])
   
   const handleGoogleSignIn = async () => {
     try {

@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { SigninForm } from "@/components/signin-form"
 import Link from "next/link"
 
@@ -16,7 +17,9 @@ export default function LoginPage() {
             v1 α
           </span>
         </Link>
-        <SigninForm />
+        <Suspense>
+          <SigninForm />
+        </Suspense>
       </div>
     </div>
   )

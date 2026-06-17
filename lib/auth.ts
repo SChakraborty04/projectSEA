@@ -23,12 +23,17 @@ export const auth = betterAuth({
     emailVerification: {
         sendOnSignUp: true,
         sendVerificationEmail: async ({ user, url, token }) => {
-            console.log(`[Auth Email Verification] Triggered for user: ${user.email}, url: ${url}`);
+            // Rewrite callbackURL so user lands on /signin with a success indicator
+            const verifyUrl = url.replace(
+                /callbackURL=[^&]*/,
+                'callbackURL=' + encodeURIComponent('/signin?verified=true')
+            );
+            console.log(`[Auth Email Verification] Triggered for user: ${user.email}, url: ${verifyUrl}`);
             try {
                 const result = await sendEmail({
                     to: user.email,
                     subject: "Verify your SuperEA email address",
-                    html: getVerificationEmailHtml(url, user.name)
+                    html: getVerificationEmailHtml(verifyUrl, user.name)
                 });
                 console.log(`[Auth Email Verification] sendEmail result:`, JSON.stringify(result));
             } catch (err) {
