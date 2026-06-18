@@ -15,7 +15,12 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   PlusCircle,
-  Loader2
+  Loader2,
+  Shield,
+  Database,
+  Cloud,
+  KeyRound,
+  FileText
 } from "lucide-react"
 
 export default function AccountPage() {
@@ -31,10 +36,11 @@ export default function AccountPage() {
   const [isUnlinking, setIsUnlinking] = React.useState(false)
 
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
-  const [deleteConfirmEmail, setDeleteConfirmEmail] = React.useState("")
+  const [deleteStep, setDeleteStep] = React.useState(0)
+  const [deleteConfirmText, setDeleteConfirmText] = React.useState("")
   const [isDeleting, setIsDeleting] = React.useState(false)
+  const [deleteProgress, setDeleteProgress] = React.useState("")
 
-  // Fetch linked accounts
   const fetchAccounts = React.useCallback(async () => {
     try {
       setIsFetchingAccounts(true)
@@ -92,14 +98,8 @@ export default function AccountPage() {
 
     try {
       setIsUpdatingProfile(true)
-      const { error } = await authClient.updateUser({
-        name: name,
-      })
-
-      if (error) {
-        throw new Error(error.message || "Failed to update profile")
-      }
-
+      const { error } = await authClient.updateUser({ name })
+      if (error) throw new Error(error.message || "Failed to update profile")
       toast.success("Profile updated successfully!")
       router.refresh()
     } catch (err: any) {
@@ -116,10 +116,7 @@ export default function AccountPage() {
         provider: "google",
         callbackURL: "/dashboard/account",
       })
-
-      if (error) {
-        throw new Error(error.message || "Failed to link Google account")
-      }
+      if (error) throw new Error(error.message || "Failed to link Google account")
     } catch (err: any) {
       toast.error(err.message || "Something went wrong")
       setIsLinking(false)
@@ -131,21 +128,12 @@ export default function AccountPage() {
       toast.error("Cannot unlink Google. This is your only login method.")
       return
     }
-
-    if (!confirm("Are you sure you want to unlink your Google account?")) {
-      return
-    }
+    if (!confirm("Are you sure you want to unlink your Google account?")) return
 
     try {
       setIsUnlinking(true)
-      const { error } = await authClient.unlinkAccount({
-        providerId: "google",
-      })
-
-      if (error) {
-        throw new Error(error.message || "Failed to unlink Google account")
-      }
-
+      const { error } = await authClient.unlinkAccount({ providerId: "google" })
+      if (error) throw new Error(error.message || "Failed to unlink Google account")
       toast.success("Google account unlinked successfully!")
       await fetchAccounts()
     } catch (err: any) {
@@ -155,35 +143,59 @@ export default function AccountPage() {
     }
   }
 
-  const handleDeleteAccount = async () => {
-    if (deleteConfirmEmail !== session.user.email) {
-      toast.error("Email address does not match your current email.")
+  const handleGdprDelete = async () => {
+    if (deleteConfirmText !== "DELETE MY DATA FOREVER") {
+      toast.error('Type "DELETE MY DATA FOREVER" to confirm.')
       return
     }
 
     try {
       setIsDeleting(true)
-      const { error } = await authClient.deleteUser()
 
-      if (error) {
-        if (error.code === "SESSION_EXPIRED_REAUTHENTICATE_TO_PERFORM_THIS_ACTION") {
-          toast.error("For security reasons, you must log out and log back in, then try again immediately.")
-        } else {
-          throw new Error(error.message || "Failed to delete account")
-        }
-        return
+      setDeleteProgress("Revoking Google OAuth tokens...")
+      setDeleteProgress("Stopping Gmail Pub/Sub webhooks...")
+      setDeleteProgress("Stopping Google Calendar webhooks...")
+      setDeleteProgress("Deleting email drafts...")
+      setDeleteProgress("Deleting synced emails & calendar events...")
+      setDeleteProgress("Deleting Corsair integration accounts...")
+      setDeleteProgress("Deleting AI agent profile...")
+      setDeleteProgress("Deleting daily context data...")
+      setDeleteProgress("Deleting sessions & OAuth records...")
+      setDeleteProgress("Deleting user account...")
+
+      const res = await fetch("/api/gdpr/delete-everything", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete account")
       }
 
-      toast.success("Your account and all associated data have been permanently deleted.")
-      router.push("/signin")
+      toast.success("All your data has been permanently erased. Goodbye.")
+      router.push("/")
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+      toast.error(err.message || "Something went wrong during deletion")
+      setDeleteProgress("")
     } finally {
       setIsDeleting(false)
     }
   }
 
   const isGoogleLinked = accounts.some(a => a.providerId === "google")
+
+  const dataCategories = [
+    { icon: Mail, label: "Email drafts & Telegram messages", desc: "All pending and sent email drafts" },
+    { icon: Cloud, label: "Synced Gmail data", desc: "All emails cached from Google via Pub/Sub" },
+    { icon: Cloud, label: "Synced Google Calendar events", desc: "All calendar events cached from Google" },
+    { icon: Database, label: "Corsair integration data", desc: "Accounts, entities, events, and config" },
+    { icon: FileText, label: "AI context & daily summaries", desc: "Daily context engine data and summaries" },
+    { icon: User, label: "Agent profile & settings", desc: "Agent name, voice, working hours, instructions" },
+    { icon: KeyRound, label: "OAuth tokens & sessions", desc: "Google auth tokens, session cookies" },
+    { icon: Shield, label: "Account identity", desc: "Name, email, avatar, and user record" },
+  ]
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
@@ -207,7 +219,6 @@ export default function AccountPage() {
             </h2>
             
             <div className="space-y-4">
-              {/* Name Field */}
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-wider text-black/60 dark:text-white/60">
                   Full Name
@@ -222,7 +233,6 @@ export default function AccountPage() {
                 />
               </div>
 
-              {/* Email Field (Read Only) */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black uppercase tracking-wider text-black/60 dark:text-white/60">
@@ -327,7 +337,6 @@ export default function AccountPage() {
               </div>
             )}
           </div>
-
         </div>
 
         {/* Right Column - Overview & Danger Zone */}
@@ -351,61 +360,122 @@ export default function AccountPage() {
             </div>
           </div>
 
-          {/* Danger Zone (GDPR) */}
+          {/* GDPR Danger Zone */}
           <div className="border-4 border-[#FF6B6B] p-6 bg-[#FFFDF5] dark:bg-[#1C1C1F] shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
             <h2 className="text-sm font-black uppercase tracking-tight text-[#FF6B6B] border-b-2 border-[#FF6B6B] pb-3 mb-4 flex items-center gap-2">
-              <Trash2 className="size-4" /> GDPR Danger Zone
+              <Trash2 className="size-4" /> Right to Erasure
             </h2>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-black/70 dark:text-white/70 leading-relaxed">
-              Permanently erase your account under the Right to be Forgotten (GDPR Art. 17). This erases all data, including your schedules, workflows, and integrations. This action is final.
-            </p>
-            
+
             {!showDeleteConfirm ? (
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="mt-4 w-full bg-[#FF6B6B] hover:bg-red-600 text-white border-2 border-black dark:border-white px-4 py-2 font-black uppercase tracking-wider text-[10px] shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#fff] active:translate-y-px transition-all rounded-none cursor-pointer text-center"
-              >
-                Delete Account
-              </button>
-            ) : (
-              <div className="mt-4 border-2 border-dashed border-[#FF6B6B] p-3 space-y-3">
-                <p className="text-[9px] font-black uppercase text-[#FF6B6B]">
-                  Type your current email <span className="underline select-all">{session.user.email}</span> to confirm:
+              <>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-black/70 dark:text-white/70 leading-relaxed">
+                  Under GDPR Art. 17, you have the right to request complete erasure of all your personal data. This action is <strong>permanent and irreversible</strong>.
                 </p>
-                <input
-                  type="text"
-                  value={deleteConfirmEmail}
-                  onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-                  className="w-full bg-[#FFFDF5] dark:bg-[#1C1C1F] border-2 border-black dark:border-white p-2 font-bold text-xs outline-none focus:bg-[#FFD93D] dark:focus:bg-[#db6802] focus:text-black rounded-none"
-                  placeholder="Type email to verify"
-                />
+                <div className="mt-3 space-y-1.5">
+                  {dataCategories.map((cat) => (
+                    <div key={cat.label} className="flex items-start gap-2 text-[9px] font-bold text-black/60 dark:text-white/60">
+                      <cat.icon className="size-3 shrink-0 mt-0.5 text-[#FF6B6B]" />
+                      <div>
+                        <span className="uppercase">{cat.label}</span>
+                        <span className="text-black/40 dark:text-white/40"> — {cat.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setShowDeleteConfirm(true); setDeleteStep(0); setDeleteConfirmText("") }}
+                  className="mt-4 w-full bg-[#FF6B6B] hover:bg-red-600 text-white border-2 border-black dark:border-white px-4 py-2 font-black uppercase tracking-wider text-[10px] shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#fff] active:translate-y-px transition-all rounded-none cursor-pointer text-center"
+                >
+                  Delete All My Data
+                </button>
+              </>
+            ) : deleteStep === 0 ? (
+              <div className="space-y-3">
+                <div className="bg-[#FF6B6B]/10 border-2 border-[#FF6B6B] p-3">
+                  <div className="flex items-center gap-2 text-[#FF6B6B] text-[10px] font-black uppercase mb-2">
+                    <AlertTriangle className="size-4" />
+                    This will permanently delete:
+                  </div>
+                  <ul className="space-y-1 text-[9px] font-bold text-black/70 dark:text-white/70">
+                    <li className="flex items-center gap-1.5"><span className="w-1 h-1 bg-[#FF6B6B] rounded-full shrink-0" />All synced emails & cached Gmail data</li>
+                    <li className="flex items-center gap-1.5"><span className="w-1 h-1 bg-[#FF6B6B] rounded-full shrink-0" />All synced Google Calendar events</li>
+                    <li className="flex items-center gap-1.5"><span className="w-1 h-1 bg-[#FF6B6B] rounded-full shrink-0" />All email drafts & Telegram messages</li>
+                    <li className="flex items-center gap-1.5"><span className="w-1 h-1 bg-[#FF6B6B] rounded-full shrink-0" />Google OAuth integration & tokens</li>
+                    <li className="flex items-center gap-1.5"><span className="w-1 h-1 bg-[#FF6B6B] rounded-full shrink-0" />Gmail Pub/Sub & Calendar webhook subscriptions</li>
+                    <li className="flex items-center gap-1.5"><span className="w-1 h-1 bg-[#FF6B6B] rounded-full shrink-0" />AI agent profile, daily context & settings</li>
+                    <li className="flex items-center gap-1.5"><span className="w-1 h-1 bg-[#FF6B6B] rounded-full shrink-0" />Your account identity (name, email, avatar)</li>
+                  </ul>
+                </div>
+                <p className="text-[10px] font-black uppercase text-[#FF6B6B] text-center">
+                  No traces will remain. This cannot be undone.
+                </p>
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowDeleteConfirm(false)
-                      setDeleteConfirmEmail("")
-                    }}
-                    className="flex-1 bg-black/10 dark:bg-white/10 text-black dark:text-white border border-black dark:border-white p-1 text-[9px] font-black uppercase rounded-none cursor-pointer"
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteStep(0) }}
+                    className="flex-1 bg-black/10 dark:bg-white/10 text-black dark:text-white border border-black dark:border-white p-2 text-[9px] font-black uppercase rounded-none cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    onClick={handleDeleteAccount}
-                    disabled={isDeleting || deleteConfirmEmail !== session.user.email}
-                    className="flex-1 bg-[#FF6B6B] hover:bg-red-600 text-white border border-black p-1 text-[9px] font-black uppercase rounded-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-1"
+                    onClick={() => setDeleteStep(1)}
+                    className="flex-1 bg-[#FF6B6B] hover:bg-red-600 text-white border border-black p-2 text-[9px] font-black uppercase rounded-none cursor-pointer"
                   >
-                    {isDeleting && <Loader2 className="animate-spin size-2.5" />}
-                    Confirm
+                    Continue →
                   </button>
                 </div>
               </div>
-            )}
+            ) : deleteStep === 1 ? (
+              <div className="space-y-3">
+                <p className="text-[10px] font-black uppercase text-[#FF6B6B]">
+                  Type <span className="bg-black text-white px-1 select-all">DELETE MY DATA FOREVER</span> to confirm:
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full bg-[#FFFDF5] dark:bg-[#1C1C1F] border-2 border-[#FF6B6B] p-2 font-bold text-xs outline-none focus:bg-[#FFD93D] focus:text-black rounded-none font-mono"
+                  placeholder="Type the phrase above"
+                  disabled={isDeleting}
+                />
+                {isDeleting && deleteProgress && (
+                  <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-black/60 dark:text-white/60">
+                    <Loader2 className="animate-spin size-3 shrink-0" />
+                    {deleteProgress}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  {!isDeleting && (
+                    <button
+                      type="button"
+                      onClick={() => { setDeleteStep(0); setDeleteConfirmText("") }}
+                      className="flex-1 bg-black/10 dark:bg-white/10 text-black dark:text-white border border-black dark:border-white p-2 text-[9px] font-black uppercase rounded-none cursor-pointer"
+                    >
+                      Back
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleGdprDelete}
+                    disabled={isDeleting || deleteConfirmText !== "DELETE MY DATA FOREVER"}
+                    className="flex-1 bg-[#FF6B6B] hover:bg-red-600 text-white border border-black p-2 text-[9px] font-black uppercase rounded-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="animate-spin size-3" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Permanently Delete Everything"
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
-
       </div>
     </div>
   )
