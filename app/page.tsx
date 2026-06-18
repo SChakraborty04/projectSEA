@@ -58,6 +58,7 @@ export default function Home() {
   const [pricingWaitlistShowForm, setPricingWaitlistShowForm] = useState(false);
   const [pricingWaitlistSubmitted, setPricingWaitlistSubmitted] = useState(false);
   const [showWaitlistNotice, setShowWaitlistNotice] = useState(false);
+  const [showDemoModal, setShowDemoModal] = useState(false);
   const [blockState, setBlockState] = useState<"idle" | "breaking" | "done">("idle");
 
   const stepsList = [
@@ -1319,6 +1320,7 @@ export default function Home() {
                   Start Testing Alpha →
                 </Link>
                 <button
+                  onClick={() => setShowDemoModal(true)}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border-4 border-black bg-white px-8 py-4 text-base font-bold uppercase tracking-wide shadow-[6px_6px_0px_0px_#000] btn-push hover:bg-[#C4B5FD] transition-colors duration-100 text-black font-black"
                 >
                   <PlayCircle className="h-5 w-5 stroke-[3px]" />
@@ -2133,6 +2135,41 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
+      {showDemoModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowDemoModal(false)}
+        >
+          <div
+            className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_#000] w-full max-w-4xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b-4 border-black p-4 flex items-center justify-between bg-[#FFD93D]">
+              <h3 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
+                <PlayCircle className="h-5 w-5 stroke-[3px]" />
+                SuperEA Demo
+              </h3>
+              <button
+                onClick={() => setShowDemoModal(false)}
+                className="bg-white hover:bg-black/5 text-black border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none font-black text-xs uppercase h-7 w-7 p-0 flex items-center justify-center cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 flex items-center justify-center bg-[#FFFDF5]">
+              <video
+                src="/superea_demo.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="max-w-full max-h-[70vh] object-contain border-2 border-black"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
