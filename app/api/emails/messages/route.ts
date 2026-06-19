@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getSession } from '@/lib/session';
 import { pool } from '@/db/index';
+import { corsair } from '@/lib/corsair';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,84 @@ async function fetchFromDb(tenantId: string) {
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
+async function syncEmailsFromGmail(tenantId: string) {
+    try {
+        const status = await corsair.manage.connectionStatus.get({ tenantId });
+        if (status['gmail'] !== 'connected') {
+            console.log(`[syncEmailsFromGmail] Gmail is not connected for tenant: ${tenantId}`);
+            return;
+        }
+
+        // Get the account ID for Gmail integration
+        const accountRes = await pool.query(
+            `SELECT id FROM corsair_accounts 
+             WHERE tenant_id = $1 AND integration_id IN (SELECT id FROM corsair_integrations WHERE name = 'gmail')`,
+            [tenantId]
+        );
+        if (accountRes.rows.length === 0) {
+            console.warn(`[syncEmailsFromGmail] No corsair_account found for tenant: ${tenantId}`);
+            return;
+        }
+        const accountId = accountRes.rows[0].id;
+
+        const client = corsair.withTenant(tenantId);
+        const listRes = await client.gmail.api.messages.list({ userId: 'me', maxResults: 15 });
+        if (!listRes || !listRes.messages || listRes.messages.length === 0) {
+            console.log(`[syncEmailsFromGmail] No messages returned from Gmail list for tenant: ${tenantId}`);
+            return;
+        }
+
+        const { classifyPhishing } = await import('@/lib/phishing-detection');
+
+        for (const msg of listRes.messages) {
+            if (!msg.id) continue;
+
+            // Check if already in DB
+            const checkRes = await pool.query(
+                `SELECT id FROM corsair_entities WHERE account_id = $1 AND entity_id = $2 AND entity_type = 'messages'`,
+                [accountId, msg.id]
+            );
+
+            if (checkRes.rows.length === 0) {
+                try {
+                    // Fetch full message
+                    const fullMsg = await client.gmail.api.messages.get({ userId: 'me', id: msg.id });
+                    if (!fullMsg) continue;
+
+                    // Run phishing detection
+                    const headers = fullMsg.payload?.headers;
+                    const subject = getHeader(headers, 'Subject') || '(no subject)';
+                    const body = extractBody(fullMsg.payload) || fullMsg.snippet || '';
+                    
+                    let phishingAnalysis = null;
+                    try {
+                        phishingAnalysis = await classifyPhishing(subject, body);
+                    } catch (phishErr) {
+                        console.error('[Sync Phishing Error]', phishErr);
+                    }
+
+                    const dataToSave = {
+                        ...fullMsg,
+                        phishingAnalysis,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    await pool.query(
+                        `INSERT INTO corsair_entities (id, account_id, entity_id, entity_type, version, data, created_at, updated_at)
+                         VALUES (gen_random_uuid(), $1, $2, 'messages', '1.0.0', $3, NOW(), NOW())`,
+                        [accountId, msg.id, JSON.stringify(dataToSave)]
+                    );
+                    console.log(`[syncEmailsFromGmail] Successfully synced and saved message: ${msg.id}`);
+                } catch (msgErr) {
+                    console.error(`[syncEmailsFromGmail] Error fetching/saving message ${msg.id}:`, msgErr);
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[syncEmailsFromGmail error]', err);
+    }
+}
+
 /**
  * GET /api/emails/messages
  *
@@ -111,9 +190,18 @@ export async function GET(request: NextRequest) {
     }
 
     const tenantId = session.user.id;
+    const { searchParams } = new URL(request.url);
+    const source = searchParams.get('source');
 
     try {
-        const messages = await fetchFromDb(tenantId);
+        let messages = await fetchFromDb(tenantId);
+
+        // Sync from Gmail if requested or if DB is empty (useful for new testers)
+        if (source === 'api' || messages.length === 0) {
+            console.log(`[emails/messages GET] Triggering sync from Gmail for tenant: ${tenantId} (source=${source}, db_count=${messages.length})`);
+            await syncEmailsFromGmail(tenantId);
+            messages = await fetchFromDb(tenantId);
+        }
 
         return NextResponse.json({ messages });
     } catch (err) {
