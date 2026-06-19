@@ -329,10 +329,10 @@ export default function EmailPage() {
   }, [])
 
   // ── Poll from local DB (background, every 10 s) ──────────────────────────
-  const fetchFromDb = useCallback(async () => {
+  const fetchFromDb = useCallback(async (source: 'api' | 'db' = 'db') => {
     try {
       setIsRefreshing(true)
-      const res = await fetch('/api/emails/messages?source=db')
+      const res = await fetch(`/api/emails/messages?source=${source}`)
       const data = await res.json()
       if (data.messages?.length > 0) {
         setMessages(data.messages)
@@ -389,14 +389,14 @@ export default function EmailPage() {
     if (connected === 'true') {
       setConnectionState('connected')
       registerWebhook()
-      fetchFromDb()
+      fetchFromDb('api')
       startPolling()
     } else if (error) {
       setConnectionState('error')
     } else {
       checkStatus().then((isConnected) => {
         if (isConnected) {
-          fetchFromDb()
+          fetchFromDb('db')
           startPolling()
         }
       })
@@ -665,7 +665,7 @@ export default function EmailPage() {
 
           <Button
             id="email-refresh-btn"
-            onClick={fetchFromDb}
+            onClick={() => fetchFromDb('api')}
             disabled={isRefreshing}
             className="bg-[#FFD93D] hover:bg-[#ffbe25] text-black border-4 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none font-black uppercase text-xs transition-all duration-75 h-10 px-4 rounded-none flex items-center"
           >
@@ -977,7 +977,7 @@ export default function EmailPage() {
                   </div>
                   <button
                     onClick={() => {
-                      fetchFromDb()
+                      fetchFromDb('api')
                       setShowCommandPalette(false)
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2 border-2 border-transparent hover:border-black dark:hover:border-white hover:bg-black/5 dark:hover:bg-white/5 rounded-none text-left text-xs font-bold uppercase tracking-wider transition-all"

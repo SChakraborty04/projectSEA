@@ -123,13 +123,16 @@ async function syncEmailsFromGmail(tenantId: string) {
         for (const msg of listRes.messages) {
             if (!msg.id) continue;
 
-            // Check if already in DB
+            // Check if already in DB (retrieve the row and its data)
             const checkRes = await pool.query(
-                `SELECT id FROM corsair_entities WHERE account_id = $1 AND entity_id = $2 AND entity_type = 'messages'`,
+                `SELECT id, data FROM corsair_entities WHERE account_id = $1 AND entity_id = $2 AND entity_type = 'messages'`,
                 [accountId, msg.id]
             );
 
-            if (checkRes.rows.length === 0) {
+            const existingRow = checkRes.rows[0];
+            const isIncomplete = existingRow && (!existingRow.data || !existingRow.data.payload);
+
+            if (!existingRow || isIncomplete) {
                 try {
                     // Fetch full message
                     const fullMsg = await client.gmail.api.messages.get({ userId: 'me', id: msg.id });
@@ -153,12 +156,22 @@ async function syncEmailsFromGmail(tenantId: string) {
                         createdAt: new Date().toISOString()
                     };
 
-                    await pool.query(
-                        `INSERT INTO corsair_entities (id, account_id, entity_id, entity_type, version, data, created_at, updated_at)
-                         VALUES (gen_random_uuid(), $1, $2, 'messages', '1.0.0', $3, NOW(), NOW())`,
-                        [accountId, msg.id, JSON.stringify(dataToSave)]
-                    );
-                    console.log(`[syncEmailsFromGmail] Successfully synced and saved message: ${msg.id}`);
+                    if (existingRow) {
+                        await pool.query(
+                            `UPDATE corsair_entities 
+                             SET data = $1, updated_at = NOW() 
+                             WHERE id = $2`,
+                            [JSON.stringify(dataToSave), existingRow.id]
+                        );
+                        console.log(`[syncEmailsFromGmail] Successfully updated incomplete message: ${msg.id}`);
+                    } else {
+                        await pool.query(
+                            `INSERT INTO corsair_entities (id, account_id, entity_id, entity_type, version, data, created_at, updated_at)
+                             VALUES (gen_random_uuid(), $1, $2, 'messages', '1.0.0', $3, NOW(), NOW())`,
+                            [accountId, msg.id, JSON.stringify(dataToSave)]
+                        );
+                        console.log(`[syncEmailsFromGmail] Successfully synced and inserted new message: ${msg.id}`);
+                    }
                 } catch (msgErr) {
                     console.error(`[syncEmailsFromGmail] Error fetching/saving message ${msg.id}:`, msgErr);
                 }
@@ -196,9 +209,11 @@ export async function GET(request: NextRequest) {
     try {
         let messages = await fetchFromDb(tenantId);
 
-        // Sync from Gmail if requested or if DB is empty (useful for new testers)
-        if (source === 'api' || messages.length === 0) {
-            console.log(`[emails/messages GET] Triggering sync from Gmail for tenant: ${tenantId} (source=${source}, db_count=${messages.length})`);
+        const hasValidMessages = messages.some(m => m.subject && m.subject !== '(no subject)');
+
+        // Sync from Gmail if requested or if DB doesn't have valid complete messages
+        if (source === 'api' || !hasValidMessages) {
+            console.log(`[emails/messages GET] Triggering sync from Gmail for tenant: ${tenantId} (source=${source}, has_valid=${hasValidMessages})`);
             await syncEmailsFromGmail(tenantId);
             messages = await fetchFromDb(tenantId);
         }
