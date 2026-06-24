@@ -34,6 +34,22 @@ export async function GET() {
     });
 
     const parsedUrl = new URL(url);
+
+    // Override broad gmail scopes with Google-approved narrower scopes
+    const scopes = parsedUrl.searchParams.get('scope')?.split(' ') || [];
+    const filteredScopes = scopes.filter(
+        s => s !== 'https://www.googleapis.com/auth/gmail.modify' &&
+             s !== 'https://www.googleapis.com/auth/gmail.labels' &&
+             s !== 'https://www.googleapis.com/auth/gmail.compose'
+    );
+    if (!filteredScopes.includes('https://www.googleapis.com/auth/gmail.readonly')) {
+        filteredScopes.push('https://www.googleapis.com/auth/gmail.readonly');
+    }
+    if (!filteredScopes.includes('https://www.googleapis.com/auth/gmail.send')) {
+        filteredScopes.push('https://www.googleapis.com/auth/gmail.send');
+    }
+    parsedUrl.searchParams.set('scope', filteredScopes.join(' '));
+
     if (!parsedUrl.searchParams.has('prompt')) {
         parsedUrl.searchParams.set('prompt', 'consent');
     }
